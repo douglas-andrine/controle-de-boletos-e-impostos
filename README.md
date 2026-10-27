@@ -29,13 +29,29 @@ packages/
 - **Mesma origem em produção**: a Vercel faz rewrite de `/api/*` para a API no Render, permitindo cookies HTTP-only sem problemas de cookies de terceiros.
 - **Dados isolados por usuário**: toda entidade pertence a um `userId`.
 
+## Autenticação
+
+- Cadastro e login com email/senha (hash **bcrypt**), validados pelos mesmos schemas Zod no front e na API.
+- Sessão em **JWT dentro de cookie HTTP-only** (`SameSite=Lax`, `Secure` em produção): o token nunca fica acessível ao JavaScript.
+- Login com email inexistente e senha errada têm a mesma resposta e o mesmo tempo, o que evita descobrir emails cadastrados.
+- **Rate limit** de 10 tentativas/minuto nas rotas de autenticação.
+- Botão **"Entrar como demonstração"**: cria sob demanda um usuário demo com dados fictícios.
+
+| Rota | Descrição |
+|---|---|
+| `POST /auth/register` | Cria a conta e abre a sessão |
+| `POST /auth/login` | Login com email e senha |
+| `POST /auth/demo` | Entra como usuário de demonstração |
+| `POST /auth/logout` | Encerra a sessão |
+| `GET /auth/me` | Retorna o usuário logado |
+
 ## Rodando localmente
 
 Pré-requisitos: Node 20.19+, pnpm 10 e Docker.
 
 ```bash
 pnpm install
-cp apps/api/.env.example apps/api/.env
+cp apps/api/.env.example apps/api/.env   # e defina um JWT_SECRET
 pnpm db:up        # Postgres local na porta 5434
 pnpm db:migrate   # aplica as migrations
 pnpm db:seed      # cria o usuário demo com dados fictícios
@@ -51,4 +67,5 @@ Usuário de demonstração: `demo@tributoleao.app` / `demo1234`.
 | `pnpm dev` | Sobe front e API em modo watch |
 | `pnpm build` | Build de produção de todos os apps |
 | `pnpm typecheck` | Checagem de tipos no monorepo |
+| `pnpm test` | Testes de integração da API (usa o banco `tributoleao_test`, criado automaticamente) |
 | `pnpm db:studio` | Abre o Prisma Studio |

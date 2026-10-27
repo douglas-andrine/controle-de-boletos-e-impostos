@@ -1,19 +1,27 @@
 import Fastify, { type FastifyError } from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import { ZodError, z } from "zod";
 import { env } from "./env";
+import { registerSession } from "./lib/session";
 import { healthRoutes } from "./routes/health";
+import { authRoutes } from "./routes/auth";
 
 export async function buildApp() {
   const app = Fastify({
-    logger: env.NODE_ENV === "development" ? { level: "info" } : true,
+    logger: env.NODE_ENV === "test" ? false : env.NODE_ENV === "development" ? { level: "info" } : true,
+    // Atrás do proxy do Render/Vercel: usa o IP real do cliente (rate limit)
+    trustProxy: env.NODE_ENV === "production",
   });
 
   // Em produção o front chama a API pelo rewrite /api da Vercel (mesma origem);
   // o CORS cobre chamadas diretas durante o desenvolvimento.
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
   await app.register(cookie);
+  // global: false → só as rotas com config.rateLimit são limitadas
+  await app.register(rateLimit, { global: false });
+  await registerSession(app);
 
   app.setErrorHandler<FastifyError | ZodError>((error, _request, reply) => {
     if (error instanceof ZodError) {
@@ -30,6 +38,7 @@ export async function buildApp() {
   });
 
   await app.register(healthRoutes);
+  await app.register(authRoutes);
 
   return app;
 }
