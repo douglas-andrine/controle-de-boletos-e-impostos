@@ -9,6 +9,11 @@
   --color-danger: #e63946;
   --color-surface: #f4f6f9;
 
+  /* Séries de gráfico: tons da família da marca validados para daltonismo
+     (o navy/dourado da marca é escuro/claro demais para marcas de dados) */
+  --color-series-tax: #2a78d6;
+  --color-series-boleto: #eda100;
+
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
