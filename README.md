@@ -29,6 +29,17 @@ packages/
 - **Mesma origem em produção**: a Vercel faz rewrite de `/api/*` para a API no Render, permitindo cookies HTTP-only sem problemas de cookies de terceiros.
 - **Dados isolados por usuário**: toda entidade pertence a um `userId`.
 
+## Telas
+
+| Tela | Destaques |
+|---|---|
+| **Dashboard** | KPIs do mês, alerta de atrasos, agenda dos próximos 15 dias com copiar código e dar baixa (com desfazer), distribuição impostos vs. boletos |
+| **Impostos** | Filtros por status e período de apuração, valor em R$, baixa com data de pagamento, estorno |
+| **Boletos** | Filtros por status, fornecedor e mês de vencimento; valor + juros/multa com total ao vivo; baixa e estorno |
+| **Fornecedores** | Busca por nome ou CPF/CNPJ, máscaras, histórico de boletos por fornecedor, exclusão protegida |
+
+Filtros e paginação ficam na URL (links compartilháveis) e todas as telas funcionam no celular.
+
 ## Autenticação
 
 - Cadastro e login com email/senha (hash **bcrypt**), validados pelos mesmos schemas Zod no front e na API.

@@ -15,6 +15,15 @@ export function useSuppliers({ page, search }: { page: number; search: string })
   });
 }
 
+/** Todos os fornecedores (até 100), para selects de filtro e formulário. */
+export function useSupplierOptions() {
+  return useQuery({
+    queryKey: ["suppliers", "options"],
+    queryFn: () => api<Paginated<SupplierDTO>>("/suppliers?pageSize=100"),
+    select: (page) => page.data,
+  });
+}
+
 /** Cria (sem id) ou atualiza (com id) um fornecedor. */
 export function useSaveSupplier() {
   const queryClient = useQueryClient();

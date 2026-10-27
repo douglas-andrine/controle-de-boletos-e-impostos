@@ -1,86 +1,25 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
-import { CircleCheckBig, Landmark, Loader2, Pencil, Plus, Search, Trash2, Undo2, X } from "lucide-react";
-import { EFFECTIVE_STATUSES, formatBRL, type EffectiveStatus, type TaxDTO } from "@tributoleao/shared";
+import { Landmark, Loader2, Plus, Search, X } from "lucide-react";
+import { EFFECTIVE_STATUSES, formatBRL, type TaxDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
 import { useDeleteTax, useSetTaxPayment, useTaxes } from "../../lib/taxes";
-import { daysUntil, formatDate, formatDueDistance, formatMonthShort } from "../../lib/format";
+import { formatDate, formatMonthShort } from "../../lib/format";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
-import { currentParams } from "../../lib/urlParams";
+import { useListFilters } from "../../lib/useListFilters";
 import { Button } from "../../components/ui/Button";
 import { Pagination } from "../../components/ui/Pagination";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
 import { StatusBadge } from "../../components/StatusBadge";
-import { CopyButton } from "../../components/CopyButton";
+import { DueCell, PayableActions, StatusTabs } from "../../components/payables";
 import { PayDialog } from "../../components/PayDialog";
 import { TaxFormDialog } from "./TaxFormDialog";
 
-const STATUS_TABS: { value: EffectiveStatus | undefined; label: string }[] = [
-  { value: undefined, label: "Todos" },
-  { value: "PENDENTE", label: "Pendentes" },
-  { value: "ATRASADO", label: "Atrasados" },
-  { value: "PAGO", label: "Pagos" },
-];
-
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
-
-function DueCell({ tax }: { tax: TaxDTO }) {
-  return (
-    <div>
-      <p className="text-slate-700 tabular-nums">{formatDate(tax.dueDate)}</p>
-      {tax.status === "PAGO" ? (
-        <p className="text-xs text-slate-500">pago em {formatDate(tax.paidAt!)}</p>
-      ) : (
-        <p className={`text-xs ${tax.status === "ATRASADO" ? "font-medium text-danger" : "text-slate-500"}`}>
-          {formatDueDistance(daysUntil(tax.dueDate))}
-        </p>
-      )}
-    </div>
-  );
-}
-
-type RowActionsProps = {
-  tax: TaxDTO;
-  onPay: () => void;
-  onUnpay: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-};
-
-function RowActions({ tax, onPay, onUnpay, onEdit, onDelete }: RowActionsProps) {
-  const iconButton = "rounded-lg p-2 text-slate-500 hover:bg-slate-100";
-  return (
-    <div className="flex items-center justify-end gap-1">
-      {tax.paymentCode && tax.status !== "PAGO" && <CopyButton value={tax.paymentCode} />}
-      {tax.status === "PAGO" ? (
-        <button type="button" onClick={onUnpay} className={`${iconButton} hover:text-navy`} aria-label={`Estornar pagamento de ${tax.name}`} title="Estornar pagamento">
-          <Undo2 className="size-4" />
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onPay}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-brand px-2.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-brand/90"
-        >
-          <CircleCheckBig className="size-4" aria-hidden />
-          Dar baixa
-        </button>
-      )}
-      <button type="button" onClick={onEdit} className={`${iconButton} hover:text-navy`} aria-label={`Editar ${tax.name}`} title="Editar">
-        <Pencil className="size-4" />
-      </button>
-      <button type="button" onClick={onDelete} className={`${iconButton} hover:text-danger`} aria-label={`Excluir ${tax.name}`} title="Excluir">
-        <Trash2 className="size-4" />
-      </button>
-    </div>
-  );
-}
 
 export function TaxesPage() {
   // Filtros na URL: ?status=ATRASADO&mes=2026-09&q=das&page=2
-  const [searchParams, setSearchParams] = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const { searchParams, page, setFilter, goToPage, clearFilters } = useListFilters();
   const statusParam = searchParams.get("status");
   const status = EFFECTIVE_STATUSES.find((s) => s === statusParam);
   const referenceMonth = searchParams.get("mes") || undefined;
@@ -96,30 +35,6 @@ export function TaxesPage() {
   const setPayment = useSetTaxPayment();
   const remove = useDeleteTax();
   const toast = useToast();
-
-
-  /** Altera um filtro e volta para a página 1. */
-  function setFilter(key: "status" | "mes" | "q", value: string | undefined) {
-    setSearchParams(
-      () => {
-        const params = currentParams();
-        if (value) params.set(key, value);
-        else params.delete(key);
-        params.delete("page");
-        return params;
-      },
-      { replace: key === "q" },
-    );
-  }
-
-  function goToPage(next: number) {
-    setSearchParams(() => {
-      const params = currentParams();
-      if (next > 1) params.set("page", String(next));
-      else params.delete("page");
-      return params;
-    });
-  }
 
   useEffect(() => {
     if (search !== (searchParams.get("q") ?? "")) setFilter("q", search || undefined);
@@ -177,8 +92,10 @@ export function TaxesPage() {
 
   const hasFilter = Boolean(status || referenceMonth || search);
   const rowActions = (tax: TaxDTO) => (
-    <RowActions
-      tax={tax}
+    <PayableActions
+      label={tax.name}
+      status={tax.status}
+      paymentCode={tax.paymentCode}
       onPay={() => {
         setPayment.reset();
         setPaying(tax);
@@ -207,21 +124,7 @@ export function TaxesPage() {
 
       {/* Filtros: status, período de apuração e busca, em uma linha no desktop */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex rounded-lg border border-slate-200 bg-white p-1" role="group" aria-label="Filtrar por status">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.label}
-              type="button"
-              onClick={() => setFilter("status", tab.value)}
-              aria-pressed={status === tab.value}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
-                status === tab.value ? "bg-navy text-white" : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <StatusTabs value={status} onChange={(value) => setFilter("status", value)} />
 
         <div className="flex items-center gap-2">
           <label htmlFor="filter-month" className="text-sm whitespace-nowrap text-slate-500">
@@ -274,7 +177,7 @@ export function TaxesPage() {
           {hasFilter ? (
             <>
               <p className="text-sm text-slate-500">Nenhum imposto encontrado com esses filtros.</p>
-              <Button variant="outline" onClick={() => { setSearchInput(""); setSearchParams({}); }}>
+              <Button variant="outline" onClick={() => { setSearchInput(""); clearFilters(); }}>
                 Limpar filtros
               </Button>
             </>
@@ -313,7 +216,7 @@ export function TaxesPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-600 tabular-nums">{formatMonthShort(tax.referenceMonth)}</td>
                     <td className="px-4 py-3">
-                      <DueCell tax={tax} />
+                      <DueCell dueDate={tax.dueDate} status={tax.status} paidAt={tax.paidAt} />
                     </td>
                     <td className="px-4 py-3 text-right font-medium whitespace-nowrap text-slate-800 tabular-nums">{formatBRL(tax.amountCents)}</td>
                     <td className="px-4 py-3">
@@ -340,7 +243,7 @@ export function TaxesPage() {
                   <StatusBadge status={tax.status} />
                 </div>
                 <div className="mt-3 flex items-end justify-between gap-3">
-                  <DueCell tax={tax} />
+                  <DueCell dueDate={tax.dueDate} status={tax.status} paidAt={tax.paidAt} />
                   <p className="text-lg font-semibold text-slate-800 tabular-nums">{formatBRL(tax.amountCents)}</p>
                 </div>
                 <div className="mt-3 border-t border-slate-100 pt-3">{rowActions(tax)}</div>

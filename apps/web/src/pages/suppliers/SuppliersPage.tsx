@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Building2, Loader2, Mail, Pencil, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { formatDocument, type SupplierDTO } from "@tributoleao/shared";
 import { useSuppliers } from "../../lib/suppliers";
@@ -42,6 +42,21 @@ function Contact({ supplier }: { supplier: SupplierDTO }) {
         </p>
       )}
     </div>
+  );
+}
+
+/** Contagem de boletos com link para o histórico do fornecedor na tela de Boletos. */
+function BoletoCountLink({ supplier, suffix = "" }: { supplier: SupplierDTO; suffix?: string }) {
+  if (supplier.boletoCount === 0) return <span>{`0${suffix}`}</span>;
+  return (
+    <Link
+      to={`/boletos?fornecedor=${supplier.id}`}
+      className="font-medium text-emerald-brand hover:underline"
+      title={`Ver boletos de ${supplier.legalName}`}
+    >
+      {supplier.boletoCount}
+      {suffix}
+    </Link>
   );
 }
 
@@ -166,7 +181,9 @@ export function SuppliersPage() {
                     <td className="max-w-56 px-4 py-3">
                       <Contact supplier={s} />
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums">{s.boletoCount}</td>
+                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums">
+                      <BoletoCountLink supplier={s} />
+                    </td>
                     <td className="px-4 py-3">
                       <RowActions supplier={s} onEdit={() => openForm(s)} onDelete={() => setDeleting(s)} />
                     </td>
@@ -191,7 +208,7 @@ export function SuppliersPage() {
                   {(s.email || s.phone) && <Contact supplier={s} />}
                   <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     {s.category && <span className="rounded-full bg-surface px-2 py-0.5">{s.category}</span>}
-                    <span>{s.boletoCount} boleto(s)</span>
+                    <BoletoCountLink supplier={s} suffix=" boleto(s)" />
                   </p>
                 </div>
               </li>
