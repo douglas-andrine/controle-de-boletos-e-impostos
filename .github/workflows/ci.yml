@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      # Mesma porta do docker-compose local, para reaproveitar o apps/api/.env.test
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tributo
+          POSTGRES_PASSWORD: tributo
+          POSTGRES_DB: tributoleao
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U tributo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Testes de integração da API
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

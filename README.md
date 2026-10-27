@@ -88,6 +88,10 @@ Todas as rotas exigem sessão e só enxergam os dados do usuário logado: o recu
 | `agenda` | Atrasados + vencimentos dos próximos 15 dias (até 10 itens), com dias até o vencimento |
 | `distribution` | Impostos vs. boletos operacionais no mês, em valor e percentual |
 
+## Deploy
+
+Supabase (Postgres) + Render (API) + Vercel (front), todos no plano gratuito. O passo a passo está em [DEPLOY.md](DEPLOY.md).
+
 ## Rodando localmente
 
 Pré-requisitos: Node 20.19+, pnpm 10 e Docker.

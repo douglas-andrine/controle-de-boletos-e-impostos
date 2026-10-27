@@ -1,0 +1,39 @@
+# Blueprint do Render: Dashboard → New → Blueprint → selecione este repositório.
+# Variáveis com `sync: false` são pedidas no momento da criação (não ficam no Git).
+services:
+  - type: web
+    name: tributoleao-api
+    runtime: node
+    plan: free
+    # Mesma região do banco (Supabase us-east-1): o dashboard faz várias consultas por requisição
+    region: virginia
+    branch: main
+    # --production=false: prisma e tsup são devDependencies, necessárias no build e no migrate
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --production=false && pnpm --filter @tributoleao/api build
+    # Migrations rodam a cada deploy antes de subir o servidor (idempotente)
+    startCommand: pnpm --filter @tributoleao/api db:deploy && pnpm --filter @tributoleao/api start
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/shared/**
+        - pnpm-lock.yaml
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20.19.4"
+      # Supabase → Connect → Transaction pooler (porta 6543) + ?pgbouncer=true&connection_limit=5
+      - key: DATABASE_URL
+        sync: false
+      # Supabase → Connect → Session pooler (porta 5432). A conexão "Direct" é só IPv6 e o Render não suporta.
+      - key: DIRECT_URL
+        sync: false
+      # URL do front na Vercel (ex.: https://tributoleao.vercel.app)
+      - key: WEB_ORIGIN
+        sync: false
+      # Gerado pelo Render; nunca aparece no repositório
+      - key: JWT_SECRET
+        generateValue: true
