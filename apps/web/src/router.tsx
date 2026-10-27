@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ComingSoonPage } from "./pages/ComingSoonPage";
+import { SuppliersPage } from "./pages/suppliers/SuppliersPage";
 
 export const router = createBrowserRouter([
   {
@@ -29,7 +30,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: "/impostos", element: <ComingSoonPage title="Impostos" /> },
           { path: "/boletos", element: <ComingSoonPage title="Boletos" /> },
-          { path: "/fornecedores", element: <ComingSoonPage title="Fornecedores" /> },
+          { path: "/fornecedores", element: <SuppliersPage /> },
         ],
       },
     ],
