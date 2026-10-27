@@ -45,6 +45,24 @@ packages/
 | `POST /auth/logout` | Encerra a sessão |
 | `GET /auth/me` | Retorna o usuário logado |
 
+## API de cadastros
+
+Todas as rotas exigem sessão e só enxergam os dados do usuário logado: o recurso de outro usuário responde `404`.
+
+| Recurso | Rotas |
+|---|---|
+| Fornecedores | `GET/POST /suppliers` · `GET/PUT/DELETE /suppliers/:id` |
+| Impostos | `GET/POST /taxes` · `GET/PUT/DELETE /taxes/:id` · `PATCH /taxes/:id/pay` · `PATCH /taxes/:id/unpay` |
+| Boletos | `GET/POST /boletos` · `GET/PUT/DELETE /boletos/:id` · `PATCH /boletos/:id/pay` · `PATCH /boletos/:id/unpay` |
+
+- **Listagens paginadas**: `?page=1&pageSize=20`, com resposta `{ data, meta: { page, pageSize, total, totalPages } }`.
+- **Filtros**:
+  - `search` em todas as listagens; em fornecedores, aceita nome ou CPF/CNPJ com ou sem máscara.
+  - Impostos e boletos: `status` (`PENDENTE`, `PAGO`, `ATRASADO`), `dueFrom` e `dueTo` (intervalo de vencimento).
+  - Impostos: `referenceMonth=AAAA-MM`. Boletos: `supplierId`.
+- **Baixa de pagamento**: `PATCH /:id/pay` aceita `{ "paidAt": "AAAA-MM-DD" }` opcional (padrão: hoje). `unpay` estorna baixas feitas por engano.
+- **Fornecedor com boletos não pode ser excluído** (`409`), para preservar o histórico financeiro.
+
 ## Rodando localmente
 
 Pré-requisitos: Node 20.19+, pnpm 10 e Docker.
