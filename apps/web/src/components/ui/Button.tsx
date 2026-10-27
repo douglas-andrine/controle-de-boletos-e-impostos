@@ -7,6 +7,7 @@ const variants = {
   outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-navy",
   gold: "border border-gold bg-gold/10 text-navy hover:bg-gold/20 focus-visible:outline-gold",
   ghost: "text-slate-600 hover:bg-slate-100 focus-visible:outline-navy",
+  danger: "bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger",
 };
 
 type ButtonProps = ComponentProps<"button"> & {

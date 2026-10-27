@@ -20,6 +20,8 @@ export function useTogglePaid() {
   return useMutation({
     mutationFn: ({ item, paid }: { item: Pick<AgendaItemDTO, "type" | "id">; paid: boolean }) =>
       api(`${resourcePath(item)}/${paid ? "pay" : "unpay"}`, { method: "PATCH" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+    // A baixa feita no dashboard também desatualiza as listagens
+    onSuccess: () =>
+      Promise.all(["dashboard", "taxes", "boletos"].map((key) => queryClient.invalidateQueries({ queryKey: [key] }))),
   });
 }

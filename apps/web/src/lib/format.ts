@@ -1,4 +1,6 @@
-const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+import { todayISO } from "@tributoleao/shared";
+
+const monthFormatter =new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
 const monthNameFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", timeZone: "UTC" });
 const percentFormatter = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
@@ -26,6 +28,22 @@ export function shiftMonth(month: string, delta: number): string {
 
 export function formatPercent(value: number): string {
   return `${percentFormatter.format(value)}%`;
+}
+
+/** "2026-09" → "09/2026" */
+export function formatMonthShort(month: string): string {
+  const [y, m] = month.split("-");
+  return `${m}/${y}`;
+}
+
+/** Dias de hoje até a data (negativo se já passou). */
+export function daysUntil(iso: string, today = todayISO()): number {
+  return Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+}
+
+/** 123456 → "1.234,56" (sem o símbolo, para campos com prefixo R$) */
+export function formatCentsPlain(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /** Distância até o vencimento em linguagem natural. */

@@ -51,7 +51,7 @@ export function DeleteSupplierDialog({ supplier, onClose }: { supplier: Supplier
               {blocked ? "Entendi" : "Cancelar"}
             </Button>
             {!blocked && (
-              <Button className="bg-danger hover:bg-danger/90 focus-visible:outline-danger" onClick={confirm} loading={remove.isPending}>
+              <Button variant="danger" onClick={confirm} loading={remove.isPending}>
                 Excluir
               </Button>
             )}

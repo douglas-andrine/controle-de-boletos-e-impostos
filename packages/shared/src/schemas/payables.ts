@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 const cents = z.number().int("Valor em centavos deve ser inteiro");
-export const isoDateSchema = z.iso.date("Data inválida (use AAAA-MM-DD)");
-export const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Período inválido (use AAAA-MM)");
+export const isoDateSchema = z.iso.date("Informe uma data válida");
+export const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Informe um período válido");
 const optionalCode = z
   .string()
   .trim()

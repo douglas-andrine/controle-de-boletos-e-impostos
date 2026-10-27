@@ -5,6 +5,7 @@ import { formatDocument, type SupplierDTO } from "@tributoleao/shared";
 import { useSuppliers } from "../../lib/suppliers";
 import { maskPhone } from "../../lib/masks";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
+import { currentParams } from "../../lib/urlParams";
 import { Button } from "../../components/ui/Button";
 import { Pagination } from "../../components/ui/Pagination";
 import { SupplierFormDialog } from "./SupplierFormDialog";
@@ -69,10 +70,12 @@ export function SuppliersPage() {
   });
 
   function goToPage(next: number) {
-    const params = new URLSearchParams(searchParams);
-    if (next > 1) params.set("page", String(next));
-    else params.delete("page");
-    setSearchParams(params);
+    setSearchParams(() => {
+      const params = currentParams();
+      if (next > 1) params.set("page", String(next));
+      else params.delete("page");
+      return params;
+    });
   }
 
   const openForm = (supplier: SupplierDTO | null) => {
