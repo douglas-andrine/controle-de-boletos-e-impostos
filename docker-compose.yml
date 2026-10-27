@@ -1,0 +1,16 @@
+# Banco local para desenvolvimento. Em produção usamos o Supabase.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tributoleao-db
+    environment:
+      POSTGRES_USER: tributo
+      POSTGRES_PASSWORD: tributo
+      POSTGRES_DB: tributoleao
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

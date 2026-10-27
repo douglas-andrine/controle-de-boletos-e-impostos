@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// O banco guarda só PENDENTE/PAGO; ATRASADO é derivado da data de vencimento.
+enum PaymentStatus {
+  PENDENTE
+  PAGO
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String? // null para quem entrou só via Google
+  googleId     String?      @unique
+  provider     AuthProvider @default(LOCAL)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  suppliers Supplier[]
+  taxes     Tax[]
+  boletos   Boleto[]
+
+  @@map("users")
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  userId    String
+  legalName String // Razão Social
+  tradeName String? // Nome Fantasia
+  document  String // CPF/CNPJ só dígitos
+  email     String?
+  phone     String?
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  boletos Boleto[]
+
+  @@unique([userId, document])
+  @@index([userId, legalName])
+  @@map("suppliers")
+}
+
+model Tax {
+  id             String        @id @default(cuid())
+  userId         String
+  name           String // DARF, DAS, IPTU...
+  revenueCode    String?
+  amountCents    Int
+  dueDate        DateTime      @db.Date
+  referenceMonth DateTime      @db.Date // período de apuração (sempre dia 1)
+  paymentCode    String? // linha digitável / PIX copia e cola
+  status         PaymentStatus @default(PENDENTE)
+  paidAt         DateTime?
+  receiptPath    String? // caminho do comprovante no storage
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+  @@index([userId, referenceMonth])
+  @@map("taxes")
+}
+
+model Boleto {
+  id          String        @id @default(cuid())
+  userId      String
+  supplierId  String
+  description String
+  amountCents Int
+  feesCents   Int           @default(0) // juros/multa
+  issueDate   DateTime      @db.Date
+  dueDate     DateTime      @db.Date
+  barcode     String?
+  status      PaymentStatus @default(PENDENTE)
+  paidAt      DateTime?
+  receiptPath String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Restrict: fornecedor com boletos não pode ser excluído (preserva histórico)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  @@index([userId, dueDate])
+  @@index([supplierId])
+  @@map("boletos")
+}

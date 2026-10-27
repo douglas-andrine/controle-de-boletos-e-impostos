@@ -1,0 +1,19 @@
+{
+  "name": "tributoleao",
+  "private": true,
+  "description": "Gestão de boletos, tributos e fornecedores",
+  "packageManager": "pnpm@10.34.4",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @tributoleao/api db:migrate",
+    "db:seed": "pnpm --filter @tributoleao/api db:seed",
+    "db:studio": "pnpm --filter @tributoleao/api db:studio"
+  }
+}
