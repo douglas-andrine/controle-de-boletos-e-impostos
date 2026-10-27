@@ -63,6 +63,20 @@ Todas as rotas exigem sessão e só enxergam os dados do usuário logado: o recu
 - **Baixa de pagamento**: `PATCH /:id/pay` aceita `{ "paidAt": "AAAA-MM-DD" }` opcional (padrão: hoje). `unpay` estorna baixas feitas por engano.
 - **Fornecedor com boletos não pode ser excluído** (`409`), para preservar o histórico financeiro.
 
+## Dashboard
+
+`GET /dashboard/stats?month=AAAA-MM` (padrão: mês atual) devolve os KPIs calculados com agregações no banco:
+
+| Campo | KPI |
+|---|---|
+| `monthTotals.pendingCents` | **Total a pagar no mês**: impostos + boletos não pagos com vencimento no mês |
+| `taxesYearToDate` | **Total acumulado de impostos** no ano, separado em pago e pendente |
+| `pendingBoletos` | **Boletos pendentes**: quantidade, valor e quantos já estão atrasados |
+| `nextDue` | **Próximo vencimento urgente** a partir de hoje, com o código de pagamento |
+| `overdue` | Quantidade e valor de tudo que está atrasado |
+| `agenda` | Atrasados + vencimentos dos próximos 15 dias (até 10 itens), com dias até o vencimento |
+| `distribution` | Impostos vs. boletos operacionais no mês, em valor e percentual |
+
 ## Rodando localmente
 
 Pré-requisitos: Node 20.19+, pnpm 10 e Docker.

@@ -37,3 +37,7 @@ export const boletoListQuerySchema = paginationSchema.extend({
   supplierId: z.string().min(1).optional(),
 });
 export type BoletoListQuery = z.infer<typeof boletoListQuerySchema>;
+
+export const dashboardQuerySchema = z.object({
+  month: monthSchema.optional(), // padrão: mês atual
+});

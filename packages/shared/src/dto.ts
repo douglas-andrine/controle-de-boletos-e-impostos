@@ -49,3 +49,33 @@ export type BoletoDTO = {
   createdAt: string;
   updatedAt: string;
 };
+
+/** Item da agenda de vencimentos do dashboard (imposto ou boleto). */
+export type AgendaItemDTO = {
+  type: "TAX" | "BOLETO";
+  id: string;
+  title: string; // nome do imposto ou descrição do boleto
+  subtitle: string | null; // código de receita ou fornecedor
+  amountCents: number; // boletos: valor + juros/multa
+  dueDate: string;
+  daysUntilDue: number; // negativo quando atrasado
+  status: EffectiveStatus;
+  paymentCode: string | null; // linha digitável / PIX, para "copiar código"
+};
+
+type Totals = { totalCents: number; paidCents: number; pendingCents: number };
+
+export type DashboardStatsDTO = {
+  month: string; // AAAA-MM de referência dos KPIs mensais
+  /** Tudo que vence no mês; `pendingCents` é o "Total a pagar no mês". */
+  monthTotals: Totals;
+  /** Impostos com vencimento no ano do mês de referência. */
+  taxesYearToDate: Totals & { year: number };
+  pendingBoletos: { count: number; totalCents: number; overdueCount: number };
+  overdue: { count: number; totalCents: number };
+  nextDue: AgendaItemDTO | null;
+  /** Atrasados + vencimentos dos próximos dias, por data. */
+  agenda: AgendaItemDTO[];
+  /** Distribuição do mês: impostos vs. boletos operacionais. */
+  distribution: { taxesCents: number; boletosCents: number; taxesPercent: number; boletosPercent: number };
+};
