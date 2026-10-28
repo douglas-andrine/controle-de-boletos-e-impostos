@@ -6,6 +6,9 @@ const envSchema = z.object({
   DATABASE_URL: z.url(),
   WEB_ORIGIN: z.url().default("http://localhost:5173"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET deve ter ao menos 32 caracteres"),
+  // Opcionais: sem eles o botão "Entrar com Google" avisa que o login está indisponível
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

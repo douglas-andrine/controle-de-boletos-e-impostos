@@ -37,3 +37,8 @@ services:
       # Gerado pelo Render; nunca aparece no repositório
       - key: JWT_SECRET
         generateValue: true
+      # Login com Google (opcional): Google Cloud Console → Credenciais → ID do cliente OAuth
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false

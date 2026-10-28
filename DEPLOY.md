@@ -53,7 +53,23 @@ Não precisa criar tabelas: a API aplica as migrations sozinha a cada deploy.
 4. Se a URL final não for `https://tributoleao.vercel.app`, atualize `WEB_ORIGIN` no Render
    (Environment → editar → Save, e ele faz o redeploy).
 
-## 4. Conferência
+## 4. Login com Google (opcional)
+
+Sem estas variáveis o site funciona normalmente, e o botão "Entrar com Google" avisa que o login está indisponível.
+
+1. Em [console.cloud.google.com](https://console.cloud.google.com), crie um projeto (ex.: `TributoLeao`).
+2. **APIs e serviços → Tela de consentimento OAuth** (ou **Google Auth Platform → Branding**): tipo **Externo**,
+   nome do app, email de suporte e email do desenvolvedor. Escopos: `openid`, `email`, `profile`.
+   Em **Público-alvo**, clique em **Publicar app** para que qualquer conta Google possa entrar
+   (com esses escopos o Google não exige verificação).
+3. **Credenciais → Criar credenciais → ID do cliente OAuth**, tipo **Aplicativo da Web**.
+   Em **URIs de redirecionamento autorizados**, adicione:
+   - `https://<sua-url-da-vercel>/api/auth/google/callback`
+   - `http://localhost:5173/api/auth/google/callback` (desenvolvimento)
+4. Copie o **ID do cliente** e a **chave secreta** para o Render (Environment):
+   `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`. Para testar localmente, coloque os mesmos valores em `apps/api/.env`.
+
+## 5. Conferência
 
 1. Abra a URL da Vercel e clique em **Entrar como demonstração**.
 2. O primeiro acesso depois de um tempo parado pode levar até 1 minuto: o plano gratuito do Render hiberna a API.
@@ -86,4 +102,5 @@ Basta dar push na `main`:
 | `P1001: Can't reach database server` | `DIRECT_URL` usando a conexão direta (IPv6): use o Session pooler |
 | `prepared statement "s0" already exists` | faltou `?pgbouncer=true` na `DATABASE_URL` |
 | Login funciona, mas recarregar a página desloga | o front está chamando a API direto, não pelo `/api`: confira o `vercel.json` |
+| Google mostra `redirect_uri_mismatch` | a URI cadastrada no Google não é exatamente `<WEB_ORIGIN>/api/auth/google/callback` |
 | `/api/...` retorna 404 na Vercel | Root Directory não está em `apps/web`, ou a URL do Render no `vercel.json` está errada |

@@ -9,6 +9,7 @@ import { applyServerErrors } from "../lib/forms";
 import { Field } from "../components/ui/Field";
 import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
+import { GoogleButton } from "../components/GoogleButton";
 
 // Confirmação de senha só existe no front; a API recebe o registerSchema puro
 const formSchema = registerSchema
@@ -72,6 +73,14 @@ export function RegisterPage() {
           Criar conta
         </Button>
       </form>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-slate-400">
+        <span className="h-px flex-1 bg-slate-200" />
+        ou
+        <span className="h-px flex-1 bg-slate-200" />
+      </div>
+
+      <GoogleButton label="Cadastrar com Google" disabled={registerUser.isPending} />
 
       <p className="mt-8 text-center text-sm text-slate-600">
         Já tem conta?{" "}

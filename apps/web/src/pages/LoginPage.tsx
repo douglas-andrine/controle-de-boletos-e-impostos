@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlayCircle } from "lucide-react";
@@ -9,6 +9,7 @@ import { applyServerErrors } from "../lib/forms";
 import { Field } from "../components/ui/Field";
 import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
+import { GOOGLE_ERRORS, GoogleButton } from "../components/GoogleButton";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -17,7 +18,8 @@ export function LoginPage() {
 
   const login = useLogin();
   const demo = useDemoLogin();
-  const [formError, setFormError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [formError, setFormError] = useState<string | null>(() => GOOGLE_ERRORS[searchParams.get("erro") ?? ""] ?? null);
   const slow = useSlowRequest(login.isPending || demo.isPending);
 
   const {
@@ -69,7 +71,9 @@ export function LoginPage() {
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <Button variant="gold" className="w-full" onClick={enterDemo} loading={demo.isPending} disabled={login.isPending}>
+      <GoogleButton disabled={login.isPending || demo.isPending} />
+
+      <Button variant="gold" className="mt-3 w-full" onClick={enterDemo} loading={demo.isPending} disabled={login.isPending}>
         {!demo.isPending && <PlayCircle className="size-4" aria-hidden />}
         Entrar como demonstração
       </Button>

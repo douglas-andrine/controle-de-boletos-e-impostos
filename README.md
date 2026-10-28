@@ -49,12 +49,15 @@ Filtros e paginação ficam na URL (links compartilháveis) e todas as telas fun
 - Sessão em **JWT dentro de cookie HTTP-only** (`SameSite=Lax`, `Secure` em produção): o token nunca fica acessível ao JavaScript.
 - Login com email inexistente e senha errada têm a mesma resposta e o mesmo tempo, o que evita descobrir emails cadastrados.
 - **Rate limit** de 10 tentativas/minuto nas rotas de autenticação.
+- **Login com Google** (OAuth 2.0, fluxo Authorization Code): a troca do código acontece na API, então o client secret nunca chega ao navegador. Um `state` aleatório em cookie protege o callback contra CSRF. Quem já tinha conta com o mesmo email (verificado pelo Google) tem a conta vinculada, sem duplicar.
 - Botão **"Entrar como demonstração"**: cria sob demanda um usuário demo com dados fictícios.
 
 | Rota | Descrição |
 |---|---|
 | `POST /auth/register` | Cria a conta e abre a sessão |
 | `POST /auth/login` | Login com email e senha |
+| `GET /auth/google` | Redireciona para a tela de login do Google |
+| `GET /auth/google/callback` | Retorno do Google: abre a sessão e volta para o app |
 | `POST /auth/demo` | Entra como usuário de demonstração |
 | `POST /auth/logout` | Encerra a sessão |
 | `GET /auth/me` | Retorna o usuário logado |
