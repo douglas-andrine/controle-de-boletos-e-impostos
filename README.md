@@ -2,6 +2,9 @@
 
 Sistema web de gestão financeira para controle de **boletos**, **tributos** e **fornecedores**, com foco em evitar atrasos em obrigações fiscais e pagamentos operacionais.
 
+**🔗 Demo ao vivo: [tributoleaovercelapp.vercel.app](https://tributoleaovercelapp.vercel.app)**. Clique em *Entrar como demonstração* para explorar com dados fictícios, sem cadastro.
+O primeiro acesso pode levar até 1 minuto, porque o servidor gratuito hiberna quando fica parado.
+
 ## Stack
 
 | Camada | Tecnologias |

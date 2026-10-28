@@ -4,7 +4,7 @@ Três serviços gratuitos, nesta ordem: **Supabase** (banco) → **Render** (API
 Todos permitem login com a conta do GitHub.
 
 ```
-Navegador ──► Vercel (tributoleao.vercel.app)
+Navegador ──► Vercel (tributoleaovercelapp.vercel.app)
                  ├── /*      → arquivos do React
                  └── /api/*  → rewrite → Render (tributoleao-api.onrender.com) ──► Supabase (Postgres)
 ```
