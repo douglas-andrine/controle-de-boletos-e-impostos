@@ -39,9 +39,10 @@ model User {
 model Supplier {
   id        String   @id @default(cuid())
   userId    String
-  legalName String // Razão Social
-  tradeName String? // Nome Fantasia
-  document  String // CPF/CNPJ só dígitos
+  // O cadastro pede só nome fantasia e categoria; os outros campos ficam de registros antigos
+  legalName String? // Razão Social
+  tradeName String? // Nome Fantasia (obrigatório na API; nulo só em registros antigos)
+  document  String? // CPF/CNPJ só dígitos
   email     String?
   phone     String?
   category  String?
@@ -50,9 +51,10 @@ model Supplier {
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   boletos Boleto[]
+  taxes   Tax[]
 
   @@unique([userId, document])
-  @@index([userId, legalName])
+  @@index([userId, tradeName])
   @@map("suppliers")
 }
 
@@ -68,13 +70,19 @@ model Tax {
   status         PaymentStatus @default(PENDENTE)
   paidAt         DateTime?
   receiptPath    String? // caminho do comprovante no storage
+  invoiceNumber  String? // número da nota fiscal
+  supplierId     String? // empresa do imposto
+  goodsDelivered Boolean? // mercadoria entregue; null = não se aplica
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Restrict: fornecedor com impostos não pode ser excluído (preserva histórico)
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: Restrict)
 
   @@index([userId, dueDate])
   @@index([userId, referenceMonth])
+  @@index([supplierId])
   @@map("taxes")
 }
 

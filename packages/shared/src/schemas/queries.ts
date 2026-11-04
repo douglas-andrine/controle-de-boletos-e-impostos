@@ -29,6 +29,10 @@ const payableFilters = {
 export const taxListQuerySchema = paginationSchema.extend({
   ...payableFilters,
   referenceMonth: monthSchema.optional(),
+  goodsDelivered: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
 });
 export type TaxListQuery = z.infer<typeof taxListQuerySchema>;
 

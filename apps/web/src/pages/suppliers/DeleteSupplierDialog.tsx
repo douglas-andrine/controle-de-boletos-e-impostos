@@ -1,4 +1,4 @@
-import type { SupplierDTO } from "@tributoleao/shared";
+import { supplierName, type SupplierDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
 import { useDeleteSupplier } from "../../lib/suppliers";
 import { Dialog } from "../../components/ui/Dialog";
@@ -20,7 +20,7 @@ export function DeleteSupplierDialog({ supplier, onClose }: { supplier: Supplier
     if (!supplier) return;
     remove.mutate(supplier.id, {
       onSuccess: () => {
-        toast({ message: `“${supplier.legalName}” excluído.` });
+        toast({ message: `“${supplierName(supplier)}” excluído.` });
         close();
       },
     });
@@ -32,12 +32,12 @@ export function DeleteSupplierDialog({ supplier, onClose }: { supplier: Supplier
         <div className="space-y-5">
           {blocked ? (
             <p className="text-sm text-slate-600">
-              <strong className="text-slate-800">{supplier.legalName}</strong> tem {supplier.boletoCount} boleto(s) vinculado(s). Para
+              <strong className="text-slate-800">{supplierName(supplier)}</strong> tem {supplier.boletoCount} boleto(s) vinculado(s). Para
               preservar o histórico de pagamentos, fornecedores com boletos não podem ser excluídos.
             </p>
           ) : (
             <p className="text-sm text-slate-600">
-              <strong className="text-slate-800">{supplier.legalName}</strong> será excluído permanentemente. Esta ação não pode ser
+              <strong className="text-slate-800">{supplierName(supplier)}</strong> será excluído permanentemente. Esta ação não pode ser
               desfeita.
             </p>
           )}

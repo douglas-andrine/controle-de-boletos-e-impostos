@@ -18,6 +18,9 @@ export const taxInputSchema = z.object({
   dueDate: isoDateSchema,
   referenceMonth: monthSchema, // período de apuração
   paymentCode: optionalCode,
+  invoiceNumber: optionalCode, // número da nota fiscal
+  supplierId: optionalCode, // empresa do imposto, do cadastro de fornecedores
+  goodsDelivered: z.boolean().nullable().default(null), // null = não se aplica
 });
 export type TaxInput = z.infer<typeof taxInputSchema>;
 

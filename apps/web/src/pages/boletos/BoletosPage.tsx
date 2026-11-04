@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Receipt, Search, X } from "lucide-react";
-import { EFFECTIVE_STATUSES, formatBRL, type BoletoDTO } from "@tributoleao/shared";
+import { EFFECTIVE_STATUSES, formatBRL, supplierName, type BoletoDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
 import { useBoletos, useDeleteBoleto, useSetBoletoPayment } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
@@ -18,7 +18,6 @@ import { BoletoFormDialog } from "./BoletoFormDialog";
 
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
 
-const supplierName = (b: BoletoDTO) => b.supplier.tradeName ?? b.supplier.legalName;
 
 function AmountCell({ boleto }: { boleto: BoletoDTO }) {
   return (
@@ -168,7 +167,7 @@ export function BoletosPage() {
             <option value="">Todos os fornecedores</option>
             {suppliers.data?.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.tradeName ?? s.legalName}
+                {supplierName(s)}
               </option>
             ))}
           </select>
@@ -243,7 +242,7 @@ export function BoletosPage() {
                   <tr key={b.id} className="hover:bg-slate-50/60">
                     <td className="max-w-64 px-4 py-3">
                       <p className="truncate font-medium text-slate-800">{b.description}</p>
-                      <p className="truncate text-xs text-slate-500">{supplierName(b)}</p>
+                      <p className="truncate text-xs text-slate-500">{supplierName(b.supplier)}</p>
                     </td>
                     <td className="px-4 py-3 text-slate-600 tabular-nums">{formatDate(b.issueDate)}</td>
                     <td className="px-4 py-3">
@@ -268,7 +267,7 @@ export function BoletosPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-800">{b.description}</p>
-                    <p className="truncate text-xs text-slate-500">{supplierName(b)}</p>
+                    <p className="truncate text-xs text-slate-500">{supplierName(b.supplier)}</p>
                   </div>
                   <StatusBadge status={b.status} />
                 </div>
@@ -307,7 +306,7 @@ export function BoletosPage() {
       >
         {deleting && (
           <>
-            <strong className="text-slate-800">{deleting.description}</strong> ({supplierName(deleting)}) de {formatBRL(deleting.totalCents)}{" "}
+            <strong className="text-slate-800">{deleting.description}</strong> ({supplierName(deleting.supplier)}) de {formatBRL(deleting.totalCents)}{" "}
             será excluído permanentemente.
           </>
         )}

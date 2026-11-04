@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { formatDocument, supplierInputSchema, type SupplierDTO } from "@tributoleao/shared";
-import { ApiError } from "../../lib/api";
+import { supplierInputSchema, supplierName, type SupplierDTO } from "@tributoleao/shared";
 import { applyServerErrors } from "../../lib/forms";
-import { maskDocument, maskPhone } from "../../lib/masks";
 import { useSaveSupplier } from "../../lib/suppliers";
 import { Dialog } from "../../components/ui/Dialog";
 import { Field } from "../../components/ui/Field";
@@ -28,15 +26,14 @@ const CATEGORY_SUGGESTIONS = [
   "Software",
 ];
 
-const emptyForm: FormInput = { legalName: "", tradeName: "", document: "", email: "", phone: "", category: "" };
+// Só nome fantasia e categoria: razão social, CPF/CNPJ e contato de fornecedores
+// antigos não são enviados, e a API os preserva.
+const emptyForm: FormInput = { tradeName: "", category: "" };
 
 function toFormValues(supplier: SupplierDTO): FormInput {
   return {
-    legalName: supplier.legalName,
-    tradeName: supplier.tradeName ?? "",
-    document: formatDocument(supplier.document),
-    email: supplier.email ?? "",
-    phone: supplier.phone ? maskPhone(supplier.phone) : "",
+    // Fornecedor antigo sem nome fantasia: sugere a razão social
+    tradeName: supplierName(supplier),
     category: supplier.category ?? "",
   };
 }
@@ -67,35 +64,16 @@ export function SupplierFormDialog({ open, supplier, onClose }: Props) {
     setFormError(null);
   }, [open, supplier, reset]);
 
-  // Aplica a máscara antes de o react-hook-form ler o valor
-  const withMask = (name: "document" | "phone", mask: (v: string) => string) => {
-    const field = register(name);
-    return {
-      ...field,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        e.target.value = mask(e.target.value);
-        return field.onChange(e);
-      },
-    };
-  };
-
   const onSubmit = handleSubmit((input) => {
     setFormError(null);
     save.mutate(
       { id: supplier?.id, input },
       {
         onSuccess: (saved) => {
-          toast({ message: supplier ? "Fornecedor atualizado." : `“${saved.legalName}” cadastrado.` });
+          toast({ message: supplier ? "Fornecedor atualizado." : `“${supplierName(saved)}” cadastrado.` });
           onClose();
         },
-        onError: (err) => {
-          // CPF/CNPJ duplicado: mostra o erro no próprio campo
-          if (err instanceof ApiError && err.status === 409) {
-            setError("document", { message: err.message });
-            return;
-          }
-          setFormError(applyServerErrors(err, setError));
-        },
+        onError: (err) => setFormError(applyServerErrors(err, setError)),
       },
     );
   });
@@ -110,28 +88,7 @@ export function SupplierFormDialog({ open, supplier, onClose }: Props) {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {formError && <Alert>{formError}</Alert>}
 
-        <Field label="Razão social *" error={errors.legalName?.message} {...register("legalName")} />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome fantasia" error={errors.tradeName?.message} {...register("tradeName")} />
-          <Field
-            label="CPF ou CNPJ *"
-            inputMode="numeric"
-            placeholder="00.000.000/0000-00"
-            maxLength={18}
-            error={errors.document?.message}
-            {...withMask("document", maskDocument)}
-          />
-          <Field label="Email" type="email" placeholder="financeiro@empresa.com.br" error={errors.email?.message} {...register("email")} />
-          <Field
-            label="Telefone"
-            type="tel"
-            inputMode="numeric"
-            placeholder="(11) 99999-9999"
-            maxLength={15}
-            error={errors.phone?.message}
-            {...withMask("phone", maskPhone)}
-          />
-        </div>
+        <Field label="Nome fantasia *" placeholder="Ex.: Atacadão Central" error={errors.tradeName?.message} {...register("tradeName")} />
         <Field label="Categoria" list="supplier-categories" placeholder="Ex.: Energia" error={errors.category?.message} {...register("category")} />
         <datalist id="supplier-categories">
           {CATEGORY_SUGGESTIONS.map((c) => (

@@ -8,17 +8,18 @@ import { pageArgs, pageMeta } from "../lib/pagination";
 import { serializeSupplier } from "../lib/serializers";
 
 const idParams = z.object({ id: z.string().min(1) });
-const withBoletoCount = { _count: { select: { boletos: true } } } as const;
+const withBoletoCount = { _count: { select: { boletos: true, taxes: true } } } as const;
 
-// PUT substitui o registro inteiro: campos opcionais ausentes viram null
+// Nome fantasia e categoria são o cadastro: ausente vira null. Razão social, CPF/CNPJ e
+// contato não estão mais no formulário, então só mudam quando vêm no corpo (preserva o antigo).
 function toSupplierData(input: SupplierInput) {
   return {
-    legalName: input.legalName,
-    tradeName: input.tradeName ?? null,
-    document: input.document,
-    email: input.email ?? null,
-    phone: input.phone ?? null,
+    tradeName: input.tradeName,
     category: input.category ?? null,
+    ...(input.legalName !== undefined && { legalName: input.legalName }),
+    ...(input.document !== undefined && { document: input.document }),
+    ...(input.email !== undefined && { email: input.email }),
+    ...(input.phone !== undefined && { phone: input.phone }),
   };
 }
 
@@ -47,7 +48,7 @@ export async function supplierRoutes(app: FastifyInstance) {
     }
 
     const [suppliers, total] = await prisma.$transaction([
-      prisma.supplier.findMany({ where, include: withBoletoCount, orderBy: { legalName: "asc" }, ...pageArgs(page, pageSize) }),
+      prisma.supplier.findMany({ where, include: withBoletoCount, orderBy: [{ tradeName: "asc" }, { legalName: "asc" }], ...pageArgs(page, pageSize) }),
       prisma.supplier.count({ where }),
     ]);
 
@@ -92,6 +93,9 @@ export async function supplierRoutes(app: FastifyInstance) {
     // Preserva o histórico financeiro: o banco também bloqueia (onDelete: Restrict)
     if (supplier._count.boletos > 0) {
       throw conflict("Este fornecedor possui boletos vinculados e não pode ser excluído");
+    }
+    if (supplier._count.taxes > 0) {
+      throw conflict("Este fornecedor possui impostos vinculados e não pode ser excluído");
     }
     await prisma.supplier.delete({ where: { id } });
     return reply.status(204).send();

@@ -75,7 +75,7 @@ describe("Boletos", () => {
         method: "POST",
         url: "/suppliers",
         cookies,
-        payload: { legalName: "Conecta Telecom Ltda.", document: "45723174000110" },
+        payload: { tradeName: "Conecta", legalName: "Conecta Telecom Ltda.", document: "45723174000110" },
       })
     ).json().id;
 

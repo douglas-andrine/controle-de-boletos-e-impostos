@@ -7,9 +7,9 @@ export type Paginated<T> = { data: T[]; meta: PageMeta };
 
 export type SupplierDTO = {
   id: string;
-  legalName: string;
-  tradeName: string | null;
-  document: string;
+  legalName: string | null;
+  tradeName: string | null; // nulo só em fornecedores antigos: exibir com supplierName()
+  document: string | null;
   email: string | null;
   phone: string | null;
   category: string | null;
@@ -17,6 +17,8 @@ export type SupplierDTO = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type SupplierRefDTO = { id: string; legalName: string | null; tradeName: string | null };
 
 export type TaxDTO = {
   id: string;
@@ -26,6 +28,9 @@ export type TaxDTO = {
   dueDate: string;
   referenceMonth: string; // AAAA-MM
   paymentCode: string | null;
+  invoiceNumber: string | null;
+  supplier: SupplierRefDTO | null; // empresa do imposto
+  goodsDelivered: boolean | null; // null = não se aplica
   status: EffectiveStatus;
   paidAt: string | null;
   hasReceipt: boolean;
@@ -35,7 +40,7 @@ export type TaxDTO = {
 
 export type BoletoDTO = {
   id: string;
-  supplier: { id: string; legalName: string; tradeName: string | null };
+  supplier: SupplierRefDTO;
   description: string;
   amountCents: number;
   feesCents: number;

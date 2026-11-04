@@ -19,7 +19,9 @@ export function serializeSupplier(s: Supplier & { _count?: { boletos: number } }
   };
 }
 
-export function serializeTax(t: Tax): TaxDTO {
+type SupplierRef = Pick<Supplier, "id" | "legalName" | "tradeName">;
+
+export function serializeTax(t: Tax & { supplier: SupplierRef | null }): TaxDTO {
   return {
     id: t.id,
     name: t.name,
@@ -28,6 +30,9 @@ export function serializeTax(t: Tax): TaxDTO {
     dueDate: toISODate(t.dueDate),
     referenceMonth: toISOMonth(t.referenceMonth),
     paymentCode: t.paymentCode,
+    invoiceNumber: t.invoiceNumber,
+    supplier: t.supplier && { id: t.supplier.id, legalName: t.supplier.legalName, tradeName: t.supplier.tradeName },
+    goodsDelivered: t.goodsDelivered,
     status: getEffectiveStatus(t),
     paidAt: t.paidAt ? toISODate(t.paidAt) : null,
     hasReceipt: t.receiptPath !== null,
@@ -36,7 +41,7 @@ export function serializeTax(t: Tax): TaxDTO {
   };
 }
 
-export function serializeBoleto(b: Boleto & { supplier: Pick<Supplier, "id" | "legalName" | "tradeName"> }): BoletoDTO {
+export function serializeBoleto(b: Boleto & { supplier: SupplierRef }): BoletoDTO {
   return {
     id: b.id,
     supplier: { id: b.supplier.id, legalName: b.supplier.legalName, tradeName: b.supplier.tradeName },
