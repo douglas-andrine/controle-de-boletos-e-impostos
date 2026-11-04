@@ -115,7 +115,7 @@ export function TaxFormDialog({ open, tax, onClose }: Props) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Número da nota fiscal" placeholder="Ex.: 123456" autoComplete="off" error={errors.invoiceNumber?.message} {...register("invoiceNumber")} />
+          <Field label="Nota fiscal" placeholder="Ex.: 123456" autoComplete="off" error={errors.invoiceNumber?.message} {...register("invoiceNumber")} />
           <Controller
             control={control}
             name="goodsDelivered"
