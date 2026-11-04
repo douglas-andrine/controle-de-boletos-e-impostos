@@ -3,10 +3,10 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { boletoInputSchema, boletoListQuerySchema, payInputSchema, todayISO, type BoletoInput } from "@tributoleao/shared";
 import { prisma } from "../lib/prisma";
-import { conflict, HttpError, notFound } from "../lib/errors";
+import { conflict, notFound } from "../lib/errors";
 import { dateFromISO } from "../lib/dates";
 import { pageArgs, pageMeta } from "../lib/pagination";
-import { payableConditions } from "../lib/payables";
+import { assertSupplierOwned, payableConditions } from "../lib/payables";
 import { serializeBoleto } from "../lib/serializers";
 
 const idParams = z.object({ id: z.string().min(1) });
@@ -28,12 +28,6 @@ async function findOwnedBoleto(userId: string, id: string) {
   const boleto = await prisma.boleto.findFirst({ where: { id, userId }, include: withSupplier });
   if (!boleto) throw notFound("Boleto");
   return boleto;
-}
-
-/** Impede vincular um boleto a fornecedor de outro usuário. */
-async function assertSupplierOwned(userId: string, supplierId: string) {
-  const exists = await prisma.supplier.count({ where: { id: supplierId, userId } });
-  if (!exists) throw new HttpError(400, "Fornecedor não encontrado");
 }
 
 export async function boletoRoutes(app: FastifyInstance) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Building2, Loader2, Mail, Pencil, Phone, Plus, Search, Trash2 } from "lucide-react";
-import { formatDocument, type SupplierDTO } from "@tributoleao/shared";
+import { formatDocument, supplierName, type SupplierDTO } from "@tributoleao/shared";
 import { useSuppliers } from "../../lib/suppliers";
 import { maskPhone } from "../../lib/masks";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
@@ -15,18 +15,27 @@ function RowActions({ supplier, onEdit, onDelete }: { supplier: SupplierDTO; onE
   const iconButton = "rounded-lg p-2 text-slate-500 hover:bg-slate-100";
   return (
     <div className="flex justify-end gap-1">
-      <button type="button" onClick={onEdit} className={`${iconButton} hover:text-navy`} aria-label={`Editar ${supplier.legalName}`}>
+      <button type="button" onClick={onEdit} className={`${iconButton} hover:text-navy`} aria-label={`Editar ${supplierName(supplier)}`}>
         <Pencil className="size-4" />
       </button>
-      <button type="button" onClick={onDelete} className={`${iconButton} hover:text-danger`} aria-label={`Excluir ${supplier.legalName}`}>
+      <button type="button" onClick={onDelete} className={`${iconButton} hover:text-danger`} aria-label={`Excluir ${supplierName(supplier)}`}>
         <Trash2 className="size-4" />
       </button>
     </div>
   );
 }
 
+/** Razão social e CPF/CNPJ, quando o fornecedor é antigo e os tem; o cadastro novo só pede o nome. */
+function LegalInfo({ supplier }: { supplier: SupplierDTO }) {
+  const legalName = supplier.legalName !== supplierName(supplier) ? supplier.legalName : null;
+  const parts = [legalName, supplier.document && formatDocument(supplier.document)].filter(Boolean);
+  if (parts.length === 0) return null;
+  return <p className="truncate text-xs text-slate-500 tabular-nums">{parts.join(" · ")}</p>;
+}
+
+/** Contato de fornecedores antigos; o cadastro novo não pede mais email nem telefone. */
 function Contact({ supplier }: { supplier: SupplierDTO }) {
-  if (!supplier.email && !supplier.phone) return <span className="text-slate-400">—</span>;
+  if (!supplier.email && !supplier.phone) return null;
   return (
     <div className="space-y-0.5 text-xs text-slate-600">
       {supplier.email && (
@@ -52,7 +61,7 @@ function BoletoCountLink({ supplier, suffix = "" }: { supplier: SupplierDTO; suf
     <Link
       to={`/boletos?fornecedor=${supplier.id}`}
       className="font-medium text-emerald-brand hover:underline"
-      title={`Ver boletos de ${supplier.legalName}`}
+      title={`Ver boletos de ${supplierName(supplier)}`}
     >
       {supplier.boletoCount}
       {suffix}
@@ -105,7 +114,7 @@ export function SuppliersPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-navy">Fornecedores</h1>
-          <p className="mt-1 text-sm text-slate-500">Empresas e pessoas de quem você recebe boletos.</p>
+          <p className="mt-1 text-sm text-slate-500">Empresas usadas nos boletos e impostos.</p>
         </div>
         <Button onClick={() => openForm(null)}>
           <Plus className="size-4" aria-hidden />
@@ -119,7 +128,7 @@ export function SuppliersPage() {
           type="search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Buscar por razão social, nome fantasia ou CPF/CNPJ"
+          placeholder="Buscar por nome"
           aria-label="Buscar fornecedores"
           className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
         />
@@ -160,9 +169,7 @@ export function SuppliersPage() {
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
                   <th className="px-4 py-3">Fornecedor</th>
-                  <th className="px-4 py-3">CPF/CNPJ</th>
                   <th className="px-4 py-3">Categoria</th>
-                  <th className="px-4 py-3">Contato</th>
                   <th className="px-4 py-3 text-right">Boletos</th>
                   <th className="px-4 py-3">
                     <span className="sr-only">Ações</span>
@@ -172,15 +179,12 @@ export function SuppliersPage() {
               <tbody className="divide-y divide-slate-100">
                 {data.data.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/60">
-                    <td className="max-w-64 px-4 py-3">
-                      <p className="truncate font-medium text-slate-800">{s.legalName}</p>
-                      {s.tradeName && <p className="truncate text-xs text-slate-500">{s.tradeName}</p>}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600 tabular-nums">{formatDocument(s.document)}</td>
-                    <td className="px-4 py-3 text-slate-600">{s.category ?? <span className="text-slate-400">—</span>}</td>
-                    <td className="max-w-56 px-4 py-3">
+                    <td className="max-w-md px-4 py-3">
+                      <p className="truncate font-medium text-slate-800">{supplierName(s)}</p>
+                      <LegalInfo supplier={s} />
                       <Contact supplier={s} />
                     </td>
+                    <td className="px-4 py-3 text-slate-600">{s.category ?? <span className="text-slate-400">—</span>}</td>
                     <td className="px-4 py-3 text-right text-slate-600 tabular-nums">
                       <BoletoCountLink supplier={s} />
                     </td>
@@ -199,13 +203,13 @@ export function SuppliersPage() {
               <li key={s.id} className="rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-800">{s.legalName}</p>
-                    <p className="text-xs text-slate-500 tabular-nums">{formatDocument(s.document)}</p>
+                    <p className="truncate font-medium text-slate-800">{supplierName(s)}</p>
+                    <LegalInfo supplier={s} />
                   </div>
                   <RowActions supplier={s} onEdit={() => openForm(s)} onDelete={() => setDeleting(s)} />
                 </div>
                 <div className="mt-3 space-y-2">
-                  {(s.email || s.phone) && <Contact supplier={s} />}
+                  <Contact supplier={s} />
                   <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     {s.category && <span className="rounded-full bg-surface px-2 py-0.5">{s.category}</span>}
                     <BoletoCountLink supplier={s} suffix=" boleto(s)" />

@@ -1,5 +1,6 @@
 export * from "./money";
 export * from "./document";
+export * from "./supplier";
 export * from "./status";
 export * from "./dto";
 export * from "./schemas/auth";

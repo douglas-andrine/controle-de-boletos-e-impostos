@@ -16,15 +16,21 @@ const optionalEmail = z
   .pipe(z.email("Email inválido").optional())
   .optional();
 
+// Vazio vira undefined; preenchido precisa ser CPF/CNPJ válido (guardado só com dígitos)
+const optionalDocument = z
+  .string()
+  .transform((v) => onlyDigits(v) || undefined)
+  .pipe(z.string().refine(isValidDocument, "CPF ou CNPJ inválido").optional())
+  .optional();
+
+// O cadastro pede só nome fantasia e categoria. Razão social, CPF/CNPJ e contato
+// continuam aceitos pela API para não perder os dados de fornecedores antigos.
 export const supplierInputSchema = z.object({
-  legalName: z.string().trim().min(2, "Informe a razão social"),
-  tradeName: optionalText,
-  document: z
-    .string()
-    .transform(onlyDigits)
-    .refine(isValidDocument, "CPF ou CNPJ inválido"),
+  tradeName: z.string().trim().min(2, "Informe o nome fantasia"),
+  category: optionalText,
+  legalName: optionalText,
+  document: optionalDocument,
   email: optionalEmail,
   phone: optionalText,
-  category: optionalText,
 });
 export type SupplierInput = z.infer<typeof supplierInputSchema>;

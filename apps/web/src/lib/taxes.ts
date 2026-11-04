@@ -1,10 +1,16 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import type { EffectiveStatus, Paginated, TaxDTO, TaxInput } from "@tributoleao/shared";
+import { supplierName, type EffectiveStatus, type Paginated, type TaxDTO, type TaxInput } from "@tributoleao/shared";
 import { api } from "./api";
 
 export const TAXES_PAGE_SIZE = 15;
 
-export type TaxFilters = { page: number; status?: EffectiveStatus; referenceMonth?: string; search?: string };
+export type TaxFilters = {
+  page: number;
+  status?: EffectiveStatus;
+  referenceMonth?: string;
+  goodsDelivered?: boolean;
+  search?: string;
+};
 
 // Baixas e edições mudam os KPIs: a lista e o dashboard são recarregados juntos
 const invalidate = (queryClient: QueryClient) =>
@@ -13,14 +19,15 @@ const invalidate = (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
   ]);
 
-export function useTaxes({ page, status, referenceMonth, search }: TaxFilters) {
+export function useTaxes({ page, status, referenceMonth, goodsDelivered, search }: TaxFilters) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(TAXES_PAGE_SIZE) });
   if (status) params.set("status", status);
   if (referenceMonth) params.set("referenceMonth", referenceMonth);
+  if (goodsDelivered !== undefined) params.set("goodsDelivered", String(goodsDelivered));
   if (search) params.set("search", search);
 
   return useQuery({
-    queryKey: ["taxes", { page, status, referenceMonth, search }],
+    queryKey: ["taxes", { page, status, referenceMonth, goodsDelivered, search }],
     queryFn: () => api<Paginated<TaxDTO>>(`/taxes?${params}`),
     placeholderData: keepPreviousData,
   });
@@ -44,6 +51,9 @@ export function useDeleteTax() {
     onSuccess: () => invalidate(queryClient),
   });
 }
+
+/** Nome da empresa (fornecedor) do imposto. */
+export const taxCompanyName = (tax: TaxDTO) => (tax.supplier ? supplierName(tax.supplier) : null);
 
 /** `paidAt` definido dá baixa nessa data; `null` estorna o pagamento. */
 export function useSetTaxPayment() {

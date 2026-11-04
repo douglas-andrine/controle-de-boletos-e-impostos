@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { todayISO } from "@tributoleao/shared";
 import { buildApp } from "../src/app";
 import { prisma } from "../src/lib/prisma";
-import { createSession, isoDay, resetDb } from "./helpers";
+import { createSession, isoDay, resetDb, validSupplier } from "./helpers";
 
 let app: FastifyInstance;
 let cookies: Record<string, string>;
@@ -121,5 +121,74 @@ describe("Impostos", () => {
 
     const own = await app.inject({ method: "GET", url: `/taxes/${id}`, cookies });
     expect(own.json().status).toBe("PENDENTE");
+  });
+});
+
+describe("Impostos: nota fiscal, empresa e entrega da mercadoria", () => {
+  const createSupplier = async (overrides: object = {}, sessionCookies = cookies) =>
+    (await app.inject({ method: "POST", url: "/suppliers", cookies: sessionCookies, payload: { ...validSupplier, ...overrides } })).json();
+
+  it("os campos novos são opcionais e vêm nulos por padrão", async () => {
+    const res = await createTax();
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ invoiceNumber: null, supplier: null, goodsDelivered: null });
+  });
+
+  it("vincula a empresa a um fornecedor e registra nota e entrega", async () => {
+    const supplier = await createSupplier();
+    const res = await createTax({ invoiceNumber: " 123456 ", supplierId: supplier.id, goodsDelivered: false });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({
+      invoiceNumber: "123456",
+      supplier: { id: supplier.id, legalName: validSupplier.legalName, tradeName: validSupplier.tradeName },
+      goodsDelivered: false,
+    });
+
+    const { id } = res.json();
+    expect((await app.inject({ method: "GET", url: `/taxes/${id}`, cookies })).json().supplier.id).toBe(supplier.id);
+  });
+
+  it("não vincula fornecedor de outro usuário", async () => {
+    const intruder = await createSession(app, "intruso@exemplo.com");
+    const foreign = await createSupplier({}, intruder.cookies);
+    const res = await createTax({ supplierId: foreign.id });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("PUT sem os campos novos limpa os valores anteriores", async () => {
+    const supplier = await createSupplier();
+    const { id } = (await createTax({ invoiceNumber: "987", supplierId: supplier.id, goodsDelivered: true })).json();
+    const put = await app.inject({ method: "PUT", url: `/taxes/${id}`, cookies, payload: baseTax });
+    expect(put.json()).toMatchObject({ invoiceNumber: null, supplier: null, goodsDelivered: null });
+  });
+
+  it("filtra pela entrega da mercadoria", async () => {
+    await createTax({ name: "ICMS", goodsDelivered: true });
+    await createTax({ name: "IPI", goodsDelivered: false });
+    await createTax({ name: "DAS" }); // não se aplica
+
+    const names = (body: { data: { name: string }[] }) => body.data.map((t) => t.name);
+    expect(names(await list("goodsDelivered=true"))).toEqual(["ICMS"]);
+    expect(names(await list("goodsDelivered=false"))).toEqual(["IPI"]);
+    expect((await list("")).meta.total).toBe(3);
+    expect((await app.inject({ method: "GET", url: "/taxes?goodsDelivered=talvez", cookies })).statusCode).toBe(400);
+  });
+
+  it("busca pelo número da nota e pelo nome do fornecedor", async () => {
+    const supplier = await createSupplier();
+    await createTax({ name: "ICMS", invoiceNumber: "445566" });
+    await createTax({ name: "ISS", supplierId: supplier.id });
+
+    const names = async (q: string) => (await list(`search=${encodeURIComponent(q)}`)).data.map((t: { name: string }) => t.name);
+    expect(await names("4455")).toEqual(["ICMS"]);
+    expect(await names("luz & força")).toEqual(["ISS"]); // nome fantasia
+    expect(await names("distribuidora")).toEqual(["ISS"]); // razão social
+  });
+
+  it("fornecedor com impostos vinculados não pode ser excluído", async () => {
+    const supplier = await createSupplier();
+    await createTax({ supplierId: supplier.id });
+    const res = await app.inject({ method: "DELETE", url: `/suppliers/${supplier.id}`, cookies });
+    expect(res.statusCode).toBe(409);
   });
 });

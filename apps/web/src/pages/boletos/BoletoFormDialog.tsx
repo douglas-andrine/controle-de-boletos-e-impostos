@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { boletoInputSchema, formatBRL, todayISO, type BoletoDTO } from "@tributoleao/shared";
+import { boletoInputSchema, formatBRL, supplierName, todayISO, type BoletoDTO } from "@tributoleao/shared";
 import { applyServerErrors } from "../../lib/forms";
 import { useSaveBoleto } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
@@ -106,7 +106,7 @@ export function BoletoFormDialog({ open, boleto, defaultSupplierId, onClose }: P
             <option value="">{suppliers.isPending ? "Carregando…" : "Selecione o fornecedor"}</option>
             {suppliers.data?.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.tradeName ? `${s.tradeName} — ${s.legalName}` : s.legalName}
+                {supplierName(s)}
               </option>
             ))}
           </SelectField>

@@ -37,10 +37,34 @@ describe("Fornecedores", () => {
     expect(res.json()).not.toHaveProperty("userId");
   });
 
-  it("aceita email vazio e o grava como null", async () => {
-    const res = await createSupplier({ ...validSupplier, email: "", tradeName: "  " });
+  it("cadastra só com nome fantasia e categoria", async () => {
+    const res = await createSupplier({ tradeName: " Mercado Bom Preço ", category: "Mercadorias" });
     expect(res.statusCode).toBe(201);
-    expect(res.json()).toMatchObject({ email: null, tradeName: null });
+    expect(res.json()).toMatchObject({
+      tradeName: "Mercado Bom Preço",
+      category: "Mercadorias",
+      legalName: null,
+      document: null,
+      email: null,
+      phone: null,
+    });
+  });
+
+  it("exige o nome fantasia", async () => {
+    const res = await createSupplier({ legalName: "Sem Fantasia Ltda.", category: "Serviços" });
+    expect(res.statusCode).toBe(400);
+    expect(Object.keys(res.json().issues)).toEqual(["tradeName"]);
+  });
+
+  it("permite vários fornecedores sem CPF/CNPJ", async () => {
+    expect((await createSupplier({ tradeName: "Feira do Zé" })).statusCode).toBe(201);
+    expect((await createSupplier({ tradeName: "Hortifruti da Esquina" })).statusCode).toBe(201);
+  });
+
+  it("aceita email vazio e o grava como null", async () => {
+    const res = await createSupplier({ ...validSupplier, email: "" });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ email: null });
   });
 
   it("rejeita CNPJ com dígito verificador inválido", async () => {
@@ -60,33 +84,46 @@ describe("Fornecedores", () => {
 
   it("lista com busca por nome ou CNPJ formatado e paginação", async () => {
     await createSupplier();
-    await createSupplier({ legalName: "Conecta Telecom Ltda.", document: "45723174000110" });
-    await createSupplier({ legalName: "Papelaria Central ME", document: "19131243000197" });
+    await createSupplier({ tradeName: "Conecta", legalName: "Conecta Telecom Ltda.", document: "45723174000110" });
+    await createSupplier({ tradeName: "Papelaria Central" });
 
     const all = await app.inject({ method: "GET", url: "/suppliers?pageSize=2", cookies });
     expect(all.json().data).toHaveLength(2);
     expect(all.json().meta).toEqual({ page: 1, pageSize: 2, total: 3, totalPages: 2 });
-    // Ordenado por razão social
-    expect(all.json().data[0].legalName).toBe("Conecta Telecom Ltda.");
+    // Ordenado por nome fantasia
+    expect(all.json().data[0].tradeName).toBe("Conecta");
 
     const byName = await app.inject({ method: "GET", url: "/suppliers?search=papelaria", cookies });
-    expect(byName.json().data.map((s: { legalName: string }) => s.legalName)).toEqual(["Papelaria Central ME"]);
+    expect(byName.json().data.map((s: { tradeName: string }) => s.tradeName)).toEqual(["Papelaria Central"]);
+
+    const byLegalName = await app.inject({ method: "GET", url: "/suppliers?search=telecom", cookies });
+    expect(byLegalName.json().data.map((s: { tradeName: string }) => s.tradeName)).toEqual(["Conecta"]);
 
     const byDoc = await app.inject({ method: "GET", url: `/suppliers?search=${encodeURIComponent("45.723.174")}`, cookies });
     expect(byDoc.json().data).toHaveLength(1);
     expect(byDoc.json().data[0].document).toBe("45723174000110");
   });
 
-  it("atualiza substituindo campos opcionais omitidos por null", async () => {
+  it("atualiza nome fantasia e categoria sem apagar os dados que o formulário não envia", async () => {
     const { id } = (await createSupplier()).json();
-    const res = await app.inject({
-      method: "PUT",
-      url: `/suppliers/${id}`,
-      cookies,
-      payload: { legalName: "Luz & Força Energia S.A.", document: "11222333000181" },
-    });
+    const res = await app.inject({ method: "PUT", url: `/suppliers/${id}`, cookies, payload: { tradeName: "Luz & Força Energia" } });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ legalName: "Luz & Força Energia S.A.", email: null, category: null });
+    expect(res.json()).toMatchObject({
+      tradeName: "Luz & Força Energia",
+      category: null, // enviado vazio = limpo
+      legalName: validSupplier.legalName,
+      document: "11222333000181",
+      email: validSupplier.email,
+      phone: validSupplier.phone,
+    });
+  });
+
+  it("fornecedor antigo sem nome fantasia continua listado e encontrável pela razão social", async () => {
+    const owner = await prisma.user.findFirstOrThrow({ where: { email: "dono@exemplo.com" } });
+    await prisma.supplier.create({ data: { userId: owner.id, legalName: "Antiga Comércio Ltda.", document: "45723174000110" } });
+
+    const res = await app.inject({ method: "GET", url: "/suppliers?search=antiga", cookies });
+    expect(res.json().data).toEqual([expect.objectContaining({ tradeName: null, legalName: "Antiga Comércio Ltda." })]);
   });
 
   it("não deixa outro usuário ler, editar ou excluir o fornecedor", async () => {
@@ -117,7 +154,7 @@ describe("Fornecedores", () => {
     const detail = await app.inject({ method: "GET", url: `/suppliers/${id}`, cookies });
     expect(detail.json().boletoCount).toBe(1);
 
-    const free = (await createSupplier({ legalName: "Sem Boletos", document: "45723174000110" })).json();
+    const free = (await createSupplier({ tradeName: "Sem Boletos" })).json();
     const ok = await app.inject({ method: "DELETE", url: `/suppliers/${free.id}`, cookies });
     expect(ok.statusCode).toBe(204);
   });

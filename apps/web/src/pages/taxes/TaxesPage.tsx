@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Landmark, Loader2, Plus, Search, X } from "lucide-react";
+import { Landmark, Loader2, PackageCheck, PackageX, Plus, Search, X } from "lucide-react";
 import { EFFECTIVE_STATUSES, formatBRL, type TaxDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
-import { useDeleteTax, useSetTaxPayment, useTaxes } from "../../lib/taxes";
+import { taxCompanyName, useDeleteTax, useSetTaxPayment, useTaxes } from "../../lib/taxes";
 import { formatDate, formatMonthShort } from "../../lib/format";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useListFilters } from "../../lib/useListFilters";
@@ -17,12 +17,47 @@ import { TaxFormDialog } from "./TaxFormDialog";
 
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
 
+// Entrega da mercadoria na URL: ?entrega=sim|nao
+const DELIVERY_PARAM = { sim: true, nao: false } as const;
+
+function DeliveryBadge({ delivered }: { delivered: boolean | null }) {
+  if (delivered === null) return null;
+  const Icon = delivered ? PackageCheck : PackageX;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
+        delivered ? "bg-emerald-brand/10 text-emerald-brand" : "bg-amber-100 text-amber-800"
+      }`}
+    >
+      <Icon className="size-3.5" aria-hidden />
+      {delivered ? "Entregue" : "Não entregue"}
+    </span>
+  );
+}
+
+/** Nota fiscal, entrega da mercadoria e empresa; "—" quando o imposto não tem nenhum dos três. */
+function InvoiceCompany({ tax }: { tax: TaxDTO }) {
+  const company = taxCompanyName(tax);
+  if (!tax.invoiceNumber && !company && tax.goodsDelivered === null) return <span className="text-slate-400">—</span>;
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {tax.invoiceNumber && <span className="text-slate-700 tabular-nums">NF {tax.invoiceNumber}</span>}
+        <DeliveryBadge delivered={tax.goodsDelivered} />
+      </div>
+      {company && <p className="text-xs text-slate-500">{company}</p>}
+    </>
+  );
+}
+
 export function TaxesPage() {
   // Filtros na URL: ?status=ATRASADO&mes=2026-09&q=das&page=2
   const { searchParams, page, setFilter, goToPage, clearFilters } = useListFilters();
   const statusParam = searchParams.get("status");
   const status = EFFECTIVE_STATUSES.find((s) => s === statusParam);
   const referenceMonth = searchParams.get("mes") || undefined;
+  const deliveryParam = searchParams.get("entrega");
+  const goodsDelivered = deliveryParam === "sim" || deliveryParam === "nao" ? DELIVERY_PARAM[deliveryParam] : undefined;
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const search = useDebouncedValue(searchInput.trim());
 
@@ -31,7 +66,7 @@ export function TaxesPage() {
   const [paying, setPaying] = useState<TaxDTO | null>(null);
   const [deleting, setDeleting] = useState<TaxDTO | null>(null);
 
-  const { data, isPending, isError, isFetching, refetch } = useTaxes({ page, status, referenceMonth, search });
+  const { data, isPending, isError, isFetching, refetch } = useTaxes({ page, status, referenceMonth, goodsDelivered, search });
   const setPayment = useSetTaxPayment();
   const remove = useDeleteTax();
   const toast = useToast();
@@ -90,7 +125,7 @@ export function TaxesPage() {
     });
   };
 
-  const hasFilter = Boolean(status || referenceMonth || search);
+  const hasFilter = Boolean(status || referenceMonth || goodsDelivered !== undefined || search);
   const rowActions = (tax: TaxDTO) => (
     <PayableActions
       label={tax.name}
@@ -122,8 +157,8 @@ export function TaxesPage() {
         </Button>
       </div>
 
-      {/* Filtros: status, período de apuração e busca, em uma linha no desktop */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      {/* Filtros: status, período de apuração, entrega e busca, em uma linha no desktop */}
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
         <StatusTabs value={status} onChange={(value) => setFilter("status", value)} />
 
         <div className="flex items-center gap-2">
@@ -146,13 +181,24 @@ export function TaxesPage() {
           )}
         </div>
 
+        <select
+          value={goodsDelivered === undefined ? "" : goodsDelivered ? "sim" : "nao"}
+          onChange={(e) => setFilter("entrega", e.target.value || undefined)}
+          aria-label="Filtrar por entrega da mercadoria"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-2 focus:outline-navy/30"
+        >
+          <option value="">Toda entrega</option>
+          <option value="sim">Mercadoria entregue</option>
+          <option value="nao">Não entregue</option>
+        </select>
+
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
           <input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por nome ou código"
+            placeholder="Buscar por nome, código, nota ou empresa"
             aria-label="Buscar impostos"
             className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
           />
@@ -198,6 +244,7 @@ export function TaxesPage() {
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
                   <th className="px-4 py-3">Imposto</th>
+                  <th className="px-4 py-3">Nota / Empresa</th>
                   <th className="px-4 py-3">Apuração</th>
                   <th className="px-4 py-3">Vencimento</th>
                   <th className="px-4 py-3 text-right">Valor</th>
@@ -213,6 +260,9 @@ export function TaxesPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800">{tax.name}</p>
                       {tax.revenueCode && <p className="text-xs text-slate-500">{tax.revenueCode}</p>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <InvoiceCompany tax={tax} />
                     </td>
                     <td className="px-4 py-3 text-slate-600 tabular-nums">{formatMonthShort(tax.referenceMonth)}</td>
                     <td className="px-4 py-3">
@@ -242,6 +292,11 @@ export function TaxesPage() {
                   </div>
                   <StatusBadge status={tax.status} />
                 </div>
+                {(tax.invoiceNumber || taxCompanyName(tax) || tax.goodsDelivered !== null) && (
+                  <div className="mt-2 text-sm">
+                    <InvoiceCompany tax={tax} />
+                  </div>
+                )}
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <DueCell dueDate={tax.dueDate} status={tax.status} paidAt={tax.paidAt} />
                   <p className="text-lg font-semibold text-slate-800 tabular-nums">{formatBRL(tax.amountCents)}</p>
