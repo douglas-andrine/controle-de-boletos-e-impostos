@@ -12,14 +12,16 @@ import { serializeTax } from "../lib/serializers";
 const idParams = z.object({ id: z.string().min(1) });
 const withSupplier = { supplier: { select: { id: true, legalName: true, tradeName: true } } } as const;
 
+// Código de receita e código de pagamento saíram do formulário: só mudam quando
+// vêm no corpo, para a edição não apagar os de impostos antigos.
 function toTaxData(input: TaxInput) {
   return {
     name: input.name,
-    revenueCode: input.revenueCode ?? null,
     amountCents: input.amountCents,
     dueDate: dateFromISO(input.dueDate),
     referenceMonth: monthFromISO(input.referenceMonth),
-    paymentCode: input.paymentCode ?? null,
+    ...(input.revenueCode !== undefined && { revenueCode: input.revenueCode }),
+    ...(input.paymentCode !== undefined && { paymentCode: input.paymentCode }),
     invoiceNumber: input.invoiceNumber ?? null,
     supplierId: input.supplierId ?? null,
     goodsDelivered: input.goodsDelivered,

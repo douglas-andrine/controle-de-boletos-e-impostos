@@ -22,12 +22,10 @@ type FormOutput = z.output<typeof taxInputSchema>;
 function emptyForm(): FormInput {
   return {
     name: "",
-    revenueCode: "",
     amountCents: 0,
     dueDate: "",
     // Tributos costumam ser apurados no mês anterior ao pagamento
     referenceMonth: shiftMonth(todayISO().slice(0, 7), -1),
-    paymentCode: "",
     invoiceNumber: "",
     supplierId: "",
     goodsDelivered: null,
@@ -37,11 +35,9 @@ function emptyForm(): FormInput {
 function toFormValues(tax: TaxDTO): FormInput {
   return {
     name: tax.name,
-    revenueCode: tax.revenueCode ?? "",
     amountCents: tax.amountCents,
     dueDate: tax.dueDate,
     referenceMonth: tax.referenceMonth,
-    paymentCode: tax.paymentCode ?? "",
     invoiceNumber: tax.invoiceNumber ?? "",
     supplierId: tax.supplier?.id ?? "",
     goodsDelivered: tax.goodsDelivered,
@@ -99,7 +95,6 @@ export function TaxFormDialog({ open, tax, onClose }: Props) {
               <option key={n} value={n} />
             ))}
           </datalist>
-          <Field label="Código de receita / guia" placeholder="Ex.: 0561" error={errors.revenueCode?.message} {...register("revenueCode")} />
 
           <Controller
             control={control}
@@ -118,14 +113,6 @@ export function TaxFormDialog({ open, tax, onClose }: Props) {
           <Field label="Vencimento *" type="date" error={errors.dueDate?.message} {...register("dueDate")} />
           <Field label="Período de apuração *" type="month" error={errors.referenceMonth?.message} {...register("referenceMonth")} />
         </div>
-
-        <Field
-          label="Código de barras / linha digitável / PIX copia e cola"
-          placeholder="Cole aqui o código para pagamento"
-          autoComplete="off"
-          error={errors.paymentCode?.message}
-          {...register("paymentCode")}
-        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Número da nota fiscal" placeholder="Ex.: 123456" autoComplete="off" error={errors.invoiceNumber?.message} {...register("invoiceNumber")} />

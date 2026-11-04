@@ -162,6 +162,19 @@ describe("Impostos: nota fiscal, empresa e entrega da mercadoria", () => {
     expect(put.json()).toMatchObject({ invoiceNumber: null, supplier: null, goodsDelivered: null });
   });
 
+  it("PUT sem código de receita e código de pagamento mantém os valores antigos", async () => {
+    const { id } = (await createTax({ paymentCode: "85890000001-2 34567890123-4" })).json();
+    // O formulário não envia mais os códigos
+    const withoutCodes = { name: baseTax.name, amountCents: 5000, referenceMonth: baseTax.referenceMonth, dueDate: baseTax.dueDate };
+
+    const put = await app.inject({ method: "PUT", url: `/taxes/${id}`, cookies, payload: withoutCodes });
+    expect(put.json()).toMatchObject({ amountCents: 5000, revenueCode: "0561", paymentCode: "85890000001-2 34567890123-4" });
+
+    // Quem envia os códigos (API) ainda consegue trocá-los
+    const changed = await app.inject({ method: "PUT", url: `/taxes/${id}`, cookies, payload: { ...baseTax, revenueCode: "1234" } });
+    expect(changed.json().revenueCode).toBe("1234");
+  });
+
   it("filtra pela entrega da mercadoria", async () => {
     await createTax({ name: "ICMS", goodsDelivered: true });
     await createTax({ name: "IPI", goodsDelivered: false });
