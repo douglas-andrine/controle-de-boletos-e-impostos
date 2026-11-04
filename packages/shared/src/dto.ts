@@ -2,6 +2,18 @@
 // Datas de calendário trafegam como "AAAA-MM-DD"; valores, em centavos.
 import type { DeliveryStatus, EffectiveStatus } from "./status";
 
+export type UserRole = "USER" | "ADMIN";
+
+/** Usuário na listagem do admin. */
+export type UserDTO = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  provider: "LOCAL" | "GOOGLE";
+  createdAt: string;
+};
+
 export type PageMeta = { page: number; pageSize: number; total: number; totalPages: number };
 export type Paginated<T> = { data: T[]; meta: PageMeta };
 

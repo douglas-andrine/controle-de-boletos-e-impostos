@@ -9,7 +9,7 @@ import { endSession, startSession } from "../lib/session";
 import { ensureDemoUser } from "../lib/demo";
 import { fetchGoogleProfile, googleAuthUrl, isGoogleConfigured, type GoogleProfile } from "../lib/google";
 
-const BCRYPT_ROUNDS = 10;
+export const BCRYPT_ROUNDS = 10;
 // Comparado quando o email não existe, para que a resposta leve o mesmo tempo
 // e não revele quais emails estão cadastrados.
 const DUMMY_HASH = bcrypt.hashSync("tributoleao-dummy-password", BCRYPT_ROUNDS);
@@ -20,7 +20,7 @@ const OAUTH_STATE_COOKIE = "tl_oauth_state";
 const OAUTH_STATE_TTL_SECONDS = 60 * 10; // tempo para concluir a tela do Google
 
 function toPublicUser(user: User) {
-  return { id: user.id, name: user.name, email: user.email, provider: user.provider };
+  return { id: user.id, name: user.name, email: user.email, provider: user.provider, role: user.role };
 }
 
 const loginErrorUrl = (code: string) => `${env.WEB_ORIGIN}/login?erro=${code}`;

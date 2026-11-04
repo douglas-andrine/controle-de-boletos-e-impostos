@@ -15,6 +15,7 @@
     "db:migrate": "pnpm --filter @tributoleao/api db:migrate",
     "db:seed": "pnpm --filter @tributoleao/api db:seed",
     "db:studio": "pnpm --filter @tributoleao/api db:studio",
+    "admin:create": "pnpm --filter @tributoleao/api admin:create",
     "test": "pnpm -r test"
   }
 }
