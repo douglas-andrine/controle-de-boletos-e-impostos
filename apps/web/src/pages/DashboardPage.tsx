@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { formatBRL, todayISO } from "@tributoleao/shared";
+import { DELIVERY_DEADLINE_DAYS, formatBRL, todayISO } from "@tributoleao/shared";
 import { DEMO_EMAIL, useCurrentUser } from "../lib/auth";
 import { useDashboardStats } from "../lib/dashboard";
 import { formatMonth, shiftMonth } from "../lib/format";
@@ -81,6 +82,16 @@ export function DashboardPage() {
             <Alert>
               <strong>{stats.overdue.count} pagamento(s) em atraso</strong> somando {formatBRL(stats.overdue.totalCents)}. Regularize para
               evitar juros e multa.
+            </Alert>
+          )}
+
+          {stats.lateDeliveries.count > 0 && (
+            <Alert>
+              <strong>{stats.lateDeliveries.count} mercadoria(s) com entrega atrasada</strong>: impostos pagos há mais de{" "}
+              {DELIVERY_DEADLINE_DAYS} dias sem a entrega registrada.{" "}
+              <Link to="/impostos?entrega=atrasada" className="font-medium underline">
+                Ver impostos
+              </Link>
             </Alert>
           )}
 

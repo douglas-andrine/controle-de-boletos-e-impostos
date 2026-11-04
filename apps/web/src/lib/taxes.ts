@@ -9,6 +9,7 @@ export type TaxFilters = {
   status?: EffectiveStatus;
   referenceMonth?: string;
   goodsDelivered?: boolean;
+  deliveryLate?: boolean;
   search?: string;
 };
 
@@ -19,15 +20,16 @@ const invalidate = (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
   ]);
 
-export function useTaxes({ page, status, referenceMonth, goodsDelivered, search }: TaxFilters) {
+export function useTaxes({ page, status, referenceMonth, goodsDelivered, deliveryLate, search }: TaxFilters) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(TAXES_PAGE_SIZE) });
   if (status) params.set("status", status);
   if (referenceMonth) params.set("referenceMonth", referenceMonth);
   if (goodsDelivered !== undefined) params.set("goodsDelivered", String(goodsDelivered));
+  if (deliveryLate) params.set("deliveryLate", "true");
   if (search) params.set("search", search);
 
   return useQuery({
-    queryKey: ["taxes", { page, status, referenceMonth, goodsDelivered, search }],
+    queryKey: ["taxes", { page, status, referenceMonth, goodsDelivered, deliveryLate, search }],
     queryFn: () => api<Paginated<TaxDTO>>(`/taxes?${params}`),
     placeholderData: keepPreviousData,
   });

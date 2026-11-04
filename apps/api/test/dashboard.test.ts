@@ -75,6 +75,7 @@ describe("GET /dashboard/stats", () => {
     expect(body.month).toBe(todayISO().slice(0, 7));
     expect(body.monthTotals).toEqual({ totalCents: 0, paidCents: 0, pendingCents: 0 });
     expect(body.overdue).toEqual({ count: 0, totalCents: 0 });
+    expect(body.lateDeliveries).toEqual({ count: 0 });
     expect(body.pendingBoletos).toEqual({ count: 0, totalCents: 0, overdueCount: 0 });
     expect(body.nextDue).toBeNull();
     expect(body.agenda).toEqual([]);
@@ -135,5 +136,19 @@ describe("GET /dashboard/stats", () => {
 
     const body = await stats();
     expect(body.nextDue).toMatchObject({ type: "TAX", title: "ISS", daysUntilDue: 0, status: "PENDENTE" });
+  });
+
+  it("conta as mercadorias com entrega atrasada", async () => {
+    const create = async (goodsDelivered: boolean, paidDaysAgo: number) => {
+      const payload = { name: "ICMS", amountCents: 1000, dueDate: isoDay(-paidDaysAgo), referenceMonth: isoDay(-paidDaysAgo).slice(0, 7), goodsDelivered };
+      const { id } = (await app.inject({ method: "POST", url: "/taxes", cookies, payload })).json();
+      await app.inject({ method: "PATCH", url: `/taxes/${id}/pay`, cookies, payload: { paidAt: isoDay(-paidDaysAgo) } });
+    };
+    await create(false, 16); // atrasada
+    await create(false, 15); // vence hoje
+    await create(true, 30); // entregue
+
+    const body = (await app.inject({ method: "GET", url: "/dashboard/stats", cookies })).json();
+    expect(body.lateDeliveries).toEqual({ count: 1 });
   });
 });

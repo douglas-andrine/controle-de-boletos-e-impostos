@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Landmark, Loader2, PackageCheck, PackageX, Plus, Search, X } from "lucide-react";
-import { EFFECTIVE_STATUSES, formatBRL, type TaxDTO } from "@tributoleao/shared";
+import { Landmark, Loader2, PackageCheck, PackageX, Plus, Search, TriangleAlert, X } from "lucide-react";
+import { DELIVERY_DEADLINE_DAYS, EFFECTIVE_STATUSES, formatBRL, type DeliveryStatus, type TaxDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
 import { taxCompanyName, useDeleteTax, useSetTaxPayment, useTaxes } from "../../lib/taxes";
 import { formatDate, formatMonthShort } from "../../lib/format";
@@ -17,20 +17,22 @@ import { TaxFormDialog } from "./TaxFormDialog";
 
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
 
-// Entrega da mercadoria na URL: ?entrega=sim|nao
+// Entrega da mercadoria na URL: ?entrega=sim|nao|atrasada
 const DELIVERY_PARAM = { sim: true, nao: false } as const;
 
-function DeliveryBadge({ delivered }: { delivered: boolean | null }) {
-  if (delivered === null) return null;
-  const Icon = delivered ? PackageCheck : PackageX;
+const DELIVERY_BADGE: Record<DeliveryStatus, { label: string; icon: typeof PackageCheck; className: string }> = {
+  ENTREGUE: { label: "Entregue", icon: PackageCheck, className: "bg-emerald-brand/10 text-emerald-brand" },
+  AGUARDANDO: { label: "Não entregue", icon: PackageX, className: "bg-amber-100 text-amber-800" },
+  ATRASADA: { label: "Entrega atrasada", icon: TriangleAlert, className: "bg-danger/10 text-danger" },
+};
+
+function DeliveryBadge({ status }: { status: DeliveryStatus | null }) {
+  if (status === null) return null;
+  const { label, icon: Icon, className } = DELIVERY_BADGE[status];
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
-        delivered ? "bg-emerald-brand/10 text-emerald-brand" : "bg-amber-100 text-amber-800"
-      }`}
-    >
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${className}`}>
       <Icon className="size-3.5" aria-hidden />
-      {delivered ? "Entregue" : "Não entregue"}
+      {label}
     </span>
   );
 }
@@ -43,9 +45,14 @@ function InvoiceCompany({ tax }: { tax: TaxDTO }) {
     <>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {tax.invoiceNumber && <span className="text-slate-700 tabular-nums">NF {tax.invoiceNumber}</span>}
-        <DeliveryBadge delivered={tax.goodsDelivered} />
+        <DeliveryBadge status={tax.deliveryStatus} />
       </div>
       {company && <p className="text-xs text-slate-500">{company}</p>}
+      {tax.deliveryDeadline && (
+        <p className={`text-xs ${tax.deliveryStatus === "ATRASADA" ? "font-medium text-danger" : "text-slate-500"}`}>
+          {tax.deliveryStatus === "ATRASADA" ? "Prazo de entrega era" : "Entrega até"} {formatDate(tax.deliveryDeadline)}
+        </p>
+      )}
     </>
   );
 }
@@ -58,6 +65,7 @@ export function TaxesPage() {
   const referenceMonth = searchParams.get("mes") || undefined;
   const deliveryParam = searchParams.get("entrega");
   const goodsDelivered = deliveryParam === "sim" || deliveryParam === "nao" ? DELIVERY_PARAM[deliveryParam] : undefined;
+  const deliveryLate = deliveryParam === "atrasada";
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const search = useDebouncedValue(searchInput.trim());
 
@@ -66,7 +74,7 @@ export function TaxesPage() {
   const [paying, setPaying] = useState<TaxDTO | null>(null);
   const [deleting, setDeleting] = useState<TaxDTO | null>(null);
 
-  const { data, isPending, isError, isFetching, refetch } = useTaxes({ page, status, referenceMonth, goodsDelivered, search });
+  const { data, isPending, isError, isFetching, refetch } = useTaxes({ page, status, referenceMonth, goodsDelivered, deliveryLate, search });
   const setPayment = useSetTaxPayment();
   const remove = useDeleteTax();
   const toast = useToast();
@@ -125,7 +133,7 @@ export function TaxesPage() {
     });
   };
 
-  const hasFilter = Boolean(status || referenceMonth || goodsDelivered !== undefined || search);
+  const hasFilter = Boolean(status || referenceMonth || goodsDelivered !== undefined || deliveryLate || search);
   const rowActions = (tax: TaxDTO) => (
     <PayableActions
       label={tax.name}
@@ -182,7 +190,7 @@ export function TaxesPage() {
         </div>
 
         <select
-          value={goodsDelivered === undefined ? "" : goodsDelivered ? "sim" : "nao"}
+          value={deliveryLate ? "atrasada" : goodsDelivered === undefined ? "" : goodsDelivered ? "sim" : "nao"}
           onChange={(e) => setFilter("entrega", e.target.value || undefined)}
           aria-label="Filtrar por entrega da mercadoria"
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-2 focus:outline-navy/30"
@@ -190,6 +198,7 @@ export function TaxesPage() {
           <option value="">Toda entrega</option>
           <option value="sim">Mercadoria entregue</option>
           <option value="nao">Não entregue</option>
+          <option value="atrasada">Entrega atrasada (+{DELIVERY_DEADLINE_DAYS} dias)</option>
         </select>
 
         <div className="relative flex-1">

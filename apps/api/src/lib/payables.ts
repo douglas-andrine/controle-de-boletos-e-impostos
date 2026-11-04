@@ -1,5 +1,5 @@
 // Regras comuns a impostos e boletos: filtros por status efetivo/vencimento e baixa.
-import type { EffectiveStatus } from "@tributoleao/shared";
+import { DELIVERY_DEADLINE_DAYS, type EffectiveStatus } from "@tributoleao/shared";
 import { HttpError } from "./errors";
 import { prisma } from "./prisma";
 import { dateFromISO, today } from "./dates";
@@ -27,4 +27,11 @@ export function payableConditions({ status, dueFrom, dueTo }: PayableFilters) {
   if (status === "ATRASADO") conditions.push({ status: "PENDENTE", dueDate: { lt: today() } });
 
   return conditions;
+}
+
+/** Pago e não entregue, com o prazo de entrega (pagamento + N dias) já vencido. */
+export function lateDeliveryWhere() {
+  const limit = today();
+  limit.setUTCDate(limit.getUTCDate() - DELIVERY_DEADLINE_DAYS);
+  return { status: "PAGO", goodsDelivered: false, paidAt: { lt: limit } } as const;
 }
