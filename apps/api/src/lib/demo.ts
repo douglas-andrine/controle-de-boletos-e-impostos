@@ -61,6 +61,9 @@ export async function seedDemoUser(prisma: PrismaClient) {
       { name: "ISS", revenueCode: "ISS-Prestação", amountCents: 45000, referenceMonth: month(-1), dueDate: day(8) },
       { name: "IPTU", revenueCode: "Parcela 10/10", amountCents: 27890, referenceMonth: month(0), dueDate: day(15) },
       { name: "FGTS", revenueCode: "FGTS Digital", amountCents: 64000, referenceMonth: month(-1), dueDate: day(-12), status: PaymentStatus.PAGO, paidAt: day(-13) },
+      // Entrega da mercadoria: uma fora do prazo (pago há mais de 15 dias) e uma ainda no prazo
+      { name: "ICMS", invoiceNumber: "004512", goodsDelivered: false, amountCents: 72400, referenceMonth: month(-1), dueDate: day(-20), status: PaymentStatus.PAGO, paidAt: day(-21) },
+      { name: "ICMS", invoiceNumber: "004587", goodsDelivered: false, amountCents: 38150, referenceMonth: month(-1), dueDate: day(-5), status: PaymentStatus.PAGO, paidAt: day(-6) },
     ].map((t) => ({ ...t, userId: user.id, paymentCode: "85890000002843150328240101202601000000000000" })),
   });
 

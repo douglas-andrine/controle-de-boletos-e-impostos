@@ -10,6 +10,7 @@ import {
 } from "@tributoleao/shared";
 import { prisma } from "../lib/prisma";
 import { monthFromISO, today } from "../lib/dates";
+import { lateDeliveryWhere } from "../lib/payables";
 
 const AGENDA_WINDOW_DAYS = 15; // agenda: atrasados + vencimentos dos próximos 15 dias
 const AGENDA_LIMIT = 10;
@@ -81,6 +82,7 @@ async function buildStats(userId: string, month: string): Promise<DashboardStats
     boletoAgenda,
     nextTax,
     nextBoleto,
+    lateDeliveries,
   ] = await Promise.all([
     prisma.tax.aggregate({ where: { ...paid, dueDate: monthRange }, ...sumTax }),
     prisma.tax.aggregate({ where: { ...pending, dueDate: monthRange }, ...sumTax }),
@@ -95,6 +97,7 @@ async function buildStats(userId: string, month: string): Promise<DashboardStats
     prisma.boleto.findMany({ where: agendaWhere, include: supplierName, orderBy: { dueDate: "asc" }, take: AGENDA_LIMIT }),
     prisma.tax.findFirst({ where: nextWhere, orderBy: { dueDate: "asc" } }),
     prisma.boleto.findFirst({ where: nextWhere, include: supplierName, orderBy: { dueDate: "asc" } }),
+    prisma.tax.count({ where: { userId, ...lateDeliveryWhere() } }),
   ]);
 
   // Impostos e boletos vêm de tabelas diferentes: junta, ordena e corta
@@ -138,6 +141,7 @@ async function buildStats(userId: string, month: string): Promise<DashboardStats
       count: taxOverdue._count._all + boletoOverdue._count._all,
       totalCents: (taxOverdue._sum.amountCents ?? 0) + boletoTotal(boletoOverdue),
     },
+    lateDeliveries: { count: lateDeliveries },
     nextDue: nextCandidates[0] ?? null,
     agenda,
     distribution: {

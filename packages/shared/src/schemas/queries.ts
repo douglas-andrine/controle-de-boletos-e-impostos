@@ -33,6 +33,11 @@ export const taxListQuerySchema = paginationSchema.extend({
     .enum(["true", "false"])
     .optional()
     .transform((v) => (v === undefined ? undefined : v === "true")),
+  /** Só os pagos com a mercadoria fora do prazo de entrega. */
+  deliveryLate: z
+    .enum(["true"])
+    .optional()
+    .transform((v) => v === "true"),
 });
 export type TaxListQuery = z.infer<typeof taxListQuerySchema>;
 

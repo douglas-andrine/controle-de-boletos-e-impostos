@@ -1,6 +1,6 @@
 // Formato das respostas da API: o back serializa para estes tipos e o front os consome.
 // Datas de calendário trafegam como "AAAA-MM-DD"; valores, em centavos.
-import type { EffectiveStatus } from "./status";
+import type { DeliveryStatus, EffectiveStatus } from "./status";
 
 export type PageMeta = { page: number; pageSize: number; total: number; totalPages: number };
 export type Paginated<T> = { data: T[]; meta: PageMeta };
@@ -31,6 +31,9 @@ export type TaxDTO = {
   invoiceNumber: string | null;
   supplier: SupplierRefDTO | null; // empresa do imposto
   goodsDelivered: boolean | null; // null = não se aplica
+  /** Derivado: ATRASADA quando passou o prazo de entrega contado do pagamento. */
+  deliveryStatus: DeliveryStatus | null;
+  deliveryDeadline: string | null; // pagamento + DELIVERY_DEADLINE_DAYS, enquanto não entregue
   status: EffectiveStatus;
   paidAt: string | null;
   hasReceipt: boolean;
@@ -78,6 +81,8 @@ export type DashboardStatsDTO = {
   taxesYearToDate: Totals & { year: number };
   pendingBoletos: { count: number; totalCents: number; overdueCount: number };
   overdue: { count: number; totalCents: number };
+  /** Impostos pagos cuja mercadoria passou do prazo de entrega. */
+  lateDeliveries: { count: number };
   nextDue: AgendaItemDTO | null;
   /** Atrasados + vencimentos dos próximos dias, por data. */
   agenda: AgendaItemDTO[];

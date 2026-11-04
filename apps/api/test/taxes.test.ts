@@ -187,6 +187,45 @@ describe("Impostos: nota fiscal, empresa e entrega da mercadoria", () => {
     expect((await app.inject({ method: "GET", url: "/taxes?goodsDelivered=talvez", cookies })).statusCode).toBe(400);
   });
 
+  describe("prazo de entrega da mercadoria", () => {
+    const paidDaysAgo = async (days: number, overrides: object = {}) => {
+      const { id } = (await createTax({ goodsDelivered: false, ...overrides })).json();
+      return (await app.inject({ method: "PATCH", url: `/taxes/${id}/pay`, cookies, payload: { paidAt: isoDay(-days) } })).json();
+    };
+
+    it("só conta o prazo depois do pagamento", async () => {
+      const res = await createTax({ goodsDelivered: false });
+      expect(res.json()).toMatchObject({ deliveryStatus: "AGUARDANDO", deliveryDeadline: null });
+      expect((await createTax()).json()).toMatchObject({ deliveryStatus: null, deliveryDeadline: null });
+    });
+
+    it("tem 15 dias após o pagamento para entregar", async () => {
+      expect(await paidDaysAgo(15)).toMatchObject({ deliveryStatus: "AGUARDANDO", deliveryDeadline: todayISO() });
+      expect(await paidDaysAgo(16)).toMatchObject({ deliveryStatus: "ATRASADA", deliveryDeadline: isoDay(-1) });
+    });
+
+    it("entregue não fica atrasado, mesmo pago há muito tempo", async () => {
+      expect(await paidDaysAgo(40, { goodsDelivered: true })).toMatchObject({ deliveryStatus: "ENTREGUE", deliveryDeadline: null });
+    });
+
+    it("estornar o pagamento tira o atraso da entrega", async () => {
+      const { id } = await paidDaysAgo(20);
+      const unpay = await app.inject({ method: "PATCH", url: `/taxes/${id}/unpay`, cookies });
+      expect(unpay.json()).toMatchObject({ deliveryStatus: "AGUARDANDO", deliveryDeadline: null });
+    });
+
+    it("filtra só as entregas atrasadas", async () => {
+      await paidDaysAgo(20, { name: "ICMS" });
+      await paidDaysAgo(5, { name: "IPI" });
+      await paidDaysAgo(20, { name: "ISS", goodsDelivered: true });
+      await createTax({ name: "DAS", goodsDelivered: false });
+
+      const body = await list("deliveryLate=true");
+      expect(body.data.map((t: { name: string }) => t.name)).toEqual(["ICMS"]);
+      expect((await app.inject({ method: "GET", url: "/taxes?deliveryLate=talvez", cookies })).statusCode).toBe(400);
+    });
+  });
+
   it("busca pelo número da nota e pelo nome do fornecedor", async () => {
     const supplier = await createSupplier();
     await createTax({ name: "ICMS", invoiceNumber: "445566" });

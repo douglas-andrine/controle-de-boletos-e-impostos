@@ -6,7 +6,7 @@ import { prisma } from "../lib/prisma";
 import { conflict, notFound } from "../lib/errors";
 import { dateFromISO, monthFromISO } from "../lib/dates";
 import { pageArgs, pageMeta } from "../lib/pagination";
-import { assertSupplierOwned, payableConditions } from "../lib/payables";
+import { assertSupplierOwned, lateDeliveryWhere, payableConditions } from "../lib/payables";
 import { serializeTax } from "../lib/serializers";
 
 const idParams = z.object({ id: z.string().min(1) });
@@ -38,11 +38,11 @@ export async function taxRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.authenticate);
 
   app.get("/taxes", async (request) => {
-    const { page, pageSize, search, referenceMonth, goodsDelivered, ...filters } = taxListQuerySchema.parse(request.query);
+    const { page, pageSize, search, referenceMonth, goodsDelivered, deliveryLate, ...filters } = taxListQuerySchema.parse(request.query);
 
     const where: Prisma.TaxWhereInput = {
       userId: request.user.sub,
-      AND: payableConditions(filters),
+      AND: [...payableConditions(filters), ...(deliveryLate ? [lateDeliveryWhere()] : [])],
       ...(referenceMonth && { referenceMonth: monthFromISO(referenceMonth) }),
       ...(goodsDelivered !== undefined && { goodsDelivered }),
       ...(search && {

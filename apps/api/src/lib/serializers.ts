@@ -1,7 +1,7 @@
 // Converte linhas do Prisma nos DTOs públicos: sem userId, datas como "AAAA-MM-DD"
 // e status efetivo (com ATRASADO) calculado no momento da leitura.
 import type { Boleto, Supplier, Tax } from "@prisma/client";
-import { getEffectiveStatus, toISODate, type BoletoDTO, type SupplierDTO, type TaxDTO } from "@tributoleao/shared";
+import { getDeliveryDeadline, getDeliveryStatus, getEffectiveStatus, toISODate, type BoletoDTO, type SupplierDTO, type TaxDTO } from "@tributoleao/shared";
 import { toISOMonth } from "./dates";
 
 export function serializeSupplier(s: Supplier & { _count?: { boletos: number } }): SupplierDTO {
@@ -33,6 +33,8 @@ export function serializeTax(t: Tax & { supplier: SupplierRef | null }): TaxDTO 
     invoiceNumber: t.invoiceNumber,
     supplier: t.supplier && { id: t.supplier.id, legalName: t.supplier.legalName, tradeName: t.supplier.tradeName },
     goodsDelivered: t.goodsDelivered,
+    deliveryStatus: getDeliveryStatus(t),
+    deliveryDeadline: getDeliveryDeadline(t),
     status: getEffectiveStatus(t),
     paidAt: t.paidAt ? toISODate(t.paidAt) : null,
     hasReceipt: t.receiptPath !== null,
