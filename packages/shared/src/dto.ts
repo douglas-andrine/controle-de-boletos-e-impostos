@@ -17,6 +17,16 @@ export type UserDTO = {
 export type PageMeta = { page: number; pageSize: number; total: number; totalPages: number };
 export type Paginated<T> = { data: T[]; meta: PageMeta };
 
+/** Totais de todos os impostos do filtro atual (não só da página). */
+export type TaxListSummary = {
+  totalCents: number;
+  pendingCents: number; // pendentes + atrasados
+  paidCents: number;
+  deliveryPending: number; // mercadorias não entregues
+  deliveryLate: number; // dessas, as fora do prazo
+};
+export type TaxListDTO = Paginated<TaxDTO> & { summary: TaxListSummary };
+
 export type SupplierDTO = {
   id: string;
   legalName: string | null;

@@ -214,6 +214,34 @@ describe("Impostos: nota fiscal, empresa e entrega da mercadoria", () => {
       expect(unpay.json()).toMatchObject({ deliveryStatus: "AGUARDANDO", deliveryDeadline: null });
     });
 
+    it("marca e desmarca a entrega pela rota própria", async () => {
+      const { id } = await paidDaysAgo(20);
+      const mark = await app.inject({ method: "PATCH", url: `/taxes/${id}/delivery`, cookies, payload: { delivered: true } });
+      expect(mark.json()).toMatchObject({ goodsDelivered: true, deliveryStatus: "ENTREGUE", deliveryDeadline: null });
+
+      const unmark = await app.inject({ method: "PATCH", url: `/taxes/${id}/delivery`, cookies, payload: { delivered: false } });
+      expect(unmark.json()).toMatchObject({ goodsDelivered: false, deliveryStatus: "ATRASADA" });
+
+      const noDelivery = (await createTax()).json();
+      const res = await app.inject({ method: "PATCH", url: `/taxes/${noDelivery.id}/delivery`, cookies, payload: { delivered: true } });
+      expect(res.statusCode).toBe(409);
+    });
+
+    it("lista traz o resumo de valores e entregas do filtro inteiro", async () => {
+      await paidDaysAgo(20, { amountCents: 1000 }); // pago, entrega atrasada
+      await paidDaysAgo(2, { amountCents: 2000 }); // pago, entrega no prazo
+      await createTax({ amountCents: 4000 }); // pendente, sem entrega
+
+      expect((await list("pageSize=1")).summary).toEqual({
+        totalCents: 7000,
+        pendingCents: 4000,
+        paidCents: 3000,
+        deliveryPending: 2,
+        deliveryLate: 1,
+      });
+      expect((await list("status=PAGO")).summary).toMatchObject({ totalCents: 3000, pendingCents: 0 });
+    });
+
     it("filtra só as entregas atrasadas", async () => {
       await paidDaysAgo(20, { name: "ICMS" });
       await paidDaysAgo(5, { name: "IPI" });

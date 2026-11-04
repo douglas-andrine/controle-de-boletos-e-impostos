@@ -43,3 +43,6 @@ export type BoletoInput = z.infer<typeof boletoInputSchema>;
 /** Corpo opcional de PATCH /:id/pay; sem data, a baixa é registrada hoje. */
 export const payInputSchema = z.object({ paidAt: isoDateSchema.optional() });
 export type PayInput = z.infer<typeof payInputSchema>;
+
+export const deliveryInputSchema = z.object({ delivered: z.boolean() });
+export type DeliveryInput = z.infer<typeof deliveryInputSchema>;

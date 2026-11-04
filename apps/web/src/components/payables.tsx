@@ -1,8 +1,10 @@
 // Peças comuns às listagens de impostos e boletos (contas a pagar).
-import { CircleCheckBig, Pencil, Trash2, Undo2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { CircleCheckBig, Ellipsis, Pencil, Trash2, Undo2 } from "lucide-react";
 import type { EffectiveStatus } from "@tributoleao/shared";
 import { daysUntil, formatDate, formatDueDistance } from "../lib/format";
 import { CopyButton } from "./CopyButton";
+import { Menu, type MenuItem } from "./ui/Menu";
 
 const STATUS_TABS: { value: EffectiveStatus | undefined; label: string }[] = [
   { value: undefined, label: "Todos" },
@@ -56,17 +58,20 @@ type PayableActionsProps = {
   onUnpay: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  /** Ação principal quando já está pago (ex.: marcar entrega); sem ela, só o menu. */
+  paidAction?: ReactNode;
+  /** Itens extras do menu, antes de Editar. */
+  menuItems?: MenuItem[];
 };
 
-export function PayableActions({ label, status, paymentCode, onPay, onUnpay, onEdit, onDelete }: PayableActionsProps) {
-  const iconButton = "rounded-lg p-2 text-slate-500 hover:bg-slate-100";
+/** Só a ação da etapa atual fica visível; editar, estornar e excluir ficam no menu ⋯. */
+export function PayableActions({ label, status, paymentCode, onPay, onUnpay, onEdit, onDelete, paidAction, menuItems = [] }: PayableActionsProps) {
+  const paid = status === "PAGO";
   return (
     <div className="flex items-center justify-end gap-1">
-      {paymentCode && status !== "PAGO" && <CopyButton value={paymentCode} />}
-      {status === "PAGO" ? (
-        <button type="button" onClick={onUnpay} className={`${iconButton} hover:text-navy`} aria-label={`Estornar pagamento de ${label}`} title="Estornar pagamento">
-          <Undo2 className="size-4" />
-        </button>
+      {paymentCode && !paid && <CopyButton value={paymentCode} />}
+      {paid ? (
+        paidAction
       ) : (
         <button
           type="button"
@@ -77,12 +82,17 @@ export function PayableActions({ label, status, paymentCode, onPay, onUnpay, onE
           Dar baixa
         </button>
       )}
-      <button type="button" onClick={onEdit} className={`${iconButton} hover:text-navy`} aria-label={`Editar ${label}`} title="Editar">
-        <Pencil className="size-4" />
-      </button>
-      <button type="button" onClick={onDelete} className={`${iconButton} hover:text-danger`} aria-label={`Excluir ${label}`} title="Excluir">
-        <Trash2 className="size-4" />
-      </button>
+      <Menu
+        trigger={<Ellipsis className="size-4" />}
+        triggerLabel={`Mais ações de ${label}`}
+        triggerClassName="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-navy"
+        items={[
+          ...menuItems,
+          { label: "Editar", Icon: Pencil, onSelect: onEdit },
+          ...(paid ? [{ label: "Estornar pagamento", Icon: Undo2, onSelect: onUnpay }] : []),
+          { label: "Excluir", Icon: Trash2, onSelect: onDelete, danger: true },
+        ]}
+      />
     </div>
   );
 }
