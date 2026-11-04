@@ -198,7 +198,7 @@ export function TaxesPage() {
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por nome, código, nota ou empresa"
+            placeholder="Buscar por nome, nota ou empresa"
             aria-label="Buscar impostos"
             className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
           />
