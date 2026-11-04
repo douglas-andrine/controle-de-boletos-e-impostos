@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { Building2, Landmark, LayoutDashboard, LogOut, Menu, Receipt, X } from "lucide-react";
+import { Building2, Landmark, LayoutDashboard, LogOut, Menu, Receipt, Users, X } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { useCurrentUser, useLogout } from "../lib/auth";
 
@@ -10,6 +10,8 @@ const navItems = [
   { to: "/boletos", label: "Boletos", Icon: Receipt },
   { to: "/fornecedores", label: "Fornecedores", Icon: Building2 },
 ];
+
+const adminNavItems = [{ to: "/usuarios", label: "Usuários", Icon: Users, end: false }];
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: user } = useCurrentUser();
@@ -23,7 +25,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3" aria-label="Principal">
-        {navItems.map(({ to, label, Icon, end }) => (
+        {[...navItems, ...(user?.role === "ADMIN" ? adminNavItems : [])].map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}

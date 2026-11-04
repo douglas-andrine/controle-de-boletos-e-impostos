@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import { GuestOnly, RequireAuth } from "./components/SessionGate";
+import { GuestOnly, RequireAdmin, RequireAuth } from "./components/SessionGate";
 import { AuthLayout } from "./layouts/AuthLayout";
 import { AppLayout } from "./layouts/AppLayout";
 import { LoginPage } from "./pages/LoginPage";
@@ -8,6 +8,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { SuppliersPage } from "./pages/suppliers/SuppliersPage";
 import { TaxesPage } from "./pages/taxes/TaxesPage";
 import { BoletosPage } from "./pages/boletos/BoletosPage";
+import { UsersPage } from "./pages/users/UsersPage";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
           { path: "/impostos", element: <TaxesPage /> },
           { path: "/boletos", element: <BoletosPage /> },
           { path: "/fornecedores", element: <SuppliersPage /> },
+          { element: <RequireAdmin />, children: [{ path: "/usuarios", element: <UsersPage /> }] },
         ],
       },
     ],

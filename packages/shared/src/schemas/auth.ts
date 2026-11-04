@@ -10,6 +10,10 @@ export const registerSchema = z.object({
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
+/** Admin criando um usuário: mesmos campos do cadastro. */
+export const createUserSchema = registerSchema;
+export type CreateUserInput = RegisterInput;
+
 export const loginSchema = z.object({
   email: emailField,
   password: z.string().min(1, "Informe a senha"),

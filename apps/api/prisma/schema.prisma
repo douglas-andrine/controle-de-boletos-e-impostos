@@ -14,6 +14,12 @@ enum PaymentStatus {
   PAGO
 }
 
+// ADMIN pode criar outros usuários com email e senha
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum AuthProvider {
   LOCAL
   GOOGLE
@@ -26,6 +32,7 @@ model User {
   passwordHash String? // null para quem entrou só via Google
   googleId     String?      @unique
   provider     AuthProvider @default(LOCAL)
+  role         UserRole     @default(USER)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

@@ -36,6 +36,13 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
+/** Páginas do administrador: os demais usuários voltam para o dashboard. */
+export function RequireAdmin() {
+  const { data: user } = useCurrentUser();
+  if (user?.role !== "ADMIN") return <Navigate to="/" replace />;
+  return <Outlet />;
+}
+
 /** Login e cadastro: quem já está logado vai direto para o app. */
 export function GuestOnly() {
   const { data: user, isPending } = useCurrentUser();

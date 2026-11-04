@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LoginInput, RegisterInput } from "@tributoleao/shared";
+import type { LoginInput, RegisterInput, UserRole } from "@tributoleao/shared";
 import { api, ApiError } from "./api";
 
 export type User = {
@@ -8,6 +8,7 @@ export type User = {
   name: string;
   email: string;
   provider: "LOCAL" | "GOOGLE";
+  role: UserRole;
 };
 
 export const DEMO_EMAIL = "demo@tributoleao.app";
