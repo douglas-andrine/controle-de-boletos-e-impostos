@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { payInputSchema, taxInputSchema, taxListQuerySchema, todayISO, type TaxInput } from "@tributoleao/shared";
+import { deliveryInputSchema, payInputSchema, taxInputSchema, taxListQuerySchema, todayISO, type TaxInput, type TaxListSummary } from "@tributoleao/shared";
 import { prisma } from "../lib/prisma";
 import { conflict, notFound } from "../lib/errors";
 import { dateFromISO, monthFromISO } from "../lib/dates";
@@ -56,7 +56,8 @@ export async function taxRoutes(app: FastifyInstance) {
       }),
     };
 
-    const [taxes, total] = await prisma.$transaction([
+    const sum = { _sum: { amountCents: true } } as const;
+    const [taxes, total, pending, paid, deliveryPendingCount, deliveryLateCount] = await prisma.$transaction([
       prisma.tax.findMany({
         where,
         include: withSupplier,
@@ -64,9 +65,22 @@ export async function taxRoutes(app: FastifyInstance) {
         ...pageArgs(page, pageSize),
       }),
       prisma.tax.count({ where }),
+      prisma.tax.aggregate({ where: { AND: [where, { status: "PENDENTE" }] }, ...sum }),
+      prisma.tax.aggregate({ where: { AND: [where, { status: "PAGO" }] }, ...sum }),
+      prisma.tax.count({ where: { AND: [where, { goodsDelivered: false }] } }),
+      prisma.tax.count({ where: { AND: [where, lateDeliveryWhere()] } }),
     ]);
 
-    return { data: taxes.map(serializeTax), meta: pageMeta(page, pageSize, total) };
+    const pendingCents = pending._sum.amountCents ?? 0;
+    const paidCents = paid._sum.amountCents ?? 0;
+    const summary: TaxListSummary = {
+      totalCents: pendingCents + paidCents,
+      pendingCents,
+      paidCents,
+      deliveryPending: deliveryPendingCount,
+      deliveryLate: deliveryLateCount,
+    };
+    return { data: taxes.map(serializeTax), meta: pageMeta(page, pageSize, total), summary };
   });
 
   app.get("/taxes/:id", async (request) => {
@@ -108,6 +122,16 @@ export async function taxRoutes(app: FastifyInstance) {
       include: withSupplier,
     });
     return serializeTax(updated);
+  });
+
+  // Marca (ou desmarca) a entrega da mercadoria sem passar pelo formulário
+  app.patch("/taxes/:id/delivery", async (request) => {
+    const { id } = idParams.parse(request.params);
+    const { delivered } = deliveryInputSchema.parse(request.body);
+    const tax = await findOwnedTax(request.user.sub, id);
+    if (tax.goodsDelivered === null) throw conflict("Este imposto não tem entrega de mercadoria");
+
+    return serializeTax(await prisma.tax.update({ where: { id }, data: { goodsDelivered: delivered }, include: withSupplier }));
   });
 
   // Estorno da baixa, para corrigir pagamentos marcados por engano

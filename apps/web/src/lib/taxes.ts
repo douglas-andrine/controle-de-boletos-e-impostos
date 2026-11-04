@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { supplierName, type EffectiveStatus, type Paginated, type TaxDTO, type TaxInput } from "@tributoleao/shared";
+import { supplierName, type EffectiveStatus, type TaxDTO, type TaxInput, type TaxListDTO } from "@tributoleao/shared";
 import { api } from "./api";
 
 export const TAXES_PAGE_SIZE = 15;
@@ -30,7 +30,7 @@ export function useTaxes({ page, status, referenceMonth, goodsDelivered, deliver
 
   return useQuery({
     queryKey: ["taxes", { page, status, referenceMonth, goodsDelivered, deliveryLate, search }],
-    queryFn: () => api<Paginated<TaxDTO>>(`/taxes?${params}`),
+    queryFn: () => api<TaxListDTO>(`/taxes?${params}`),
     placeholderData: keepPreviousData,
   });
 }
@@ -65,6 +65,16 @@ export function useSetTaxPayment() {
       paidAt
         ? api<TaxDTO>(`/taxes/${id}/pay`, { method: "PATCH", body: { paidAt } })
         : api<TaxDTO>(`/taxes/${id}/unpay`, { method: "PATCH" }),
+    onSuccess: () => invalidate(queryClient),
+  });
+}
+
+/** Marca ou desmarca a entrega da mercadoria. */
+export function useSetTaxDelivery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, delivered }: { id: string; delivered: boolean }) =>
+      api<TaxDTO>(`/taxes/${id}/delivery`, { method: "PATCH", body: { delivered } }),
     onSuccess: () => invalidate(queryClient),
   });
 }
