@@ -43,7 +43,7 @@ async function boleto(amountCents: number, dueDate: string, { paid = false, fees
       method: "POST",
       url: "/boletos",
       cookies,
-      payload: { supplierId, description, amountCents, feesCents, issueDate: "2020-01-01", dueDate, barcode: `BAR-${description}` },
+      payload: { supplierId, invoiceNumber: description, description, amountCents, feesCents, issueDate: "2020-01-01", dueDate, barcode: `BAR-${description}` },
     })
   ).json();
   if (paid) await app.inject({ method: "PATCH", url: `/boletos/${id}/pay`, cookies, payload: { paidAt: dueDate } });
@@ -114,8 +114,8 @@ describe("GET /dashboard/stats", () => {
 
     expect(body.nextDue).toMatchObject({
       type: "BOLETO",
-      title: "Aluguel",
-      subtitle: validSupplier.tradeName,
+      title: validSupplier.tradeName, // boleto: fornecedor no título e a nota abaixo
+      subtitle: "NF Aluguel",
       amountCents: 4000,
       daysUntilDue: 3,
       status: "PENDENTE",
@@ -124,10 +124,10 @@ describe("GET /dashboard/stats", () => {
 
     expect(body.agenda.map((i: { title: string; status: string; daysUntilDue: number }) => [i.title, i.status, i.daysUntilDue])).toEqual([
       ["DAS", "ATRASADO", -5],
-      ["Internet", "ATRASADO", -2],
-      ["Aluguel", "PENDENTE", 3],
+      [validSupplier.tradeName, "ATRASADO", -2],
+      [validSupplier.tradeName, "PENDENTE", 3],
     ]);
-    expect(body.agenda[1]).toMatchObject({ type: "BOLETO", amountCents: 2150, paymentCode: "BAR-Internet" });
+    expect(body.agenda[1]).toMatchObject({ type: "BOLETO", subtitle: "NF Internet", amountCents: 2150, paymentCode: "BAR-Internet" });
   });
 
   it("considera como próximo vencimento um item que vence hoje", async () => {

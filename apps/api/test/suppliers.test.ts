@@ -145,7 +145,7 @@ describe("Fornecedores", () => {
       method: "POST",
       url: "/boletos",
       cookies,
-      payload: { supplierId: id, description: "Conta de energia", amountCents: 10000, issueDate: isoDay(-5), dueDate: isoDay(5) },
+      payload: { supplierId: id, invoiceNumber: "123", description: "Conta de energia", amountCents: 10000, issueDate: isoDay(-5), dueDate: isoDay(5) },
     });
 
     const blocked = await app.inject({ method: "DELETE", url: `/suppliers/${id}`, cookies });

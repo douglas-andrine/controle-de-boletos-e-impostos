@@ -66,11 +66,12 @@ export type TaxDTO = {
 export type BoletoDTO = {
   id: string;
   supplier: SupplierRefDTO;
-  description: string;
+  invoiceNumber: string | null; // nula só em boletos antigos
+  description: string | null; // campo antigo, não está mais no cadastro
   amountCents: number;
   feesCents: number;
   totalCents: number;
-  issueDate: string;
+  issueDate: string | null; // campo antigo, não está mais no cadastro
   dueDate: string;
   barcode: string | null;
   status: EffectiveStatus;
@@ -85,7 +86,7 @@ export type AgendaItemDTO = {
   type: "TAX" | "BOLETO";
   id: string;
   title: string; // nome do imposto ou descrição do boleto
-  subtitle: string | null; // código de receita ou fornecedor
+  subtitle: string | null; // código de receita, ou fornecedor e nota do boleto
   amountCents: number; // boletos: valor + juros/multa
   dueDate: string;
   daysUntilDue: number; // negativo quando atrasado

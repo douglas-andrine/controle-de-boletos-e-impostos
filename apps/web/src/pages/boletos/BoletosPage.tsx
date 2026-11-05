@@ -4,7 +4,6 @@ import { EFFECTIVE_STATUSES, formatBRL, supplierName, type BoletoDTO } from "@tr
 import { ApiError } from "../../lib/api";
 import { useBoletos, useDeleteBoleto, useSetBoletoPayment } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
-import { formatDate } from "../../lib/format";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useListFilters } from "../../lib/useListFilters";
 import { Button } from "../../components/ui/Button";
@@ -18,6 +17,19 @@ import { BoletoFormDialog } from "./BoletoFormDialog";
 
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
 
+/** Como o boleto é chamado nas mensagens: pela nota; boletos antigos, pela descrição. */
+const boletoLabel = (b: BoletoDTO) => (b.invoiceNumber ? `NF ${b.invoiceNumber}` : (b.description ?? "Boleto"));
+
+/** Fornecedor em destaque e a nota abaixo (com a descrição, em boletos antigos). */
+function SupplierInvoice({ boleto }: { boleto: BoletoDTO }) {
+  const detail = [boleto.invoiceNumber && `NF ${boleto.invoiceNumber}`, boleto.description].filter(Boolean).join(" · ");
+  return (
+    <div className="min-w-0">
+      <p className="truncate font-medium text-slate-800">{supplierName(boleto.supplier)}</p>
+      {detail && <p className="truncate text-xs text-slate-500 tabular-nums">{detail}</p>}
+    </div>
+  );
+}
 
 function AmountCell({ boleto }: { boleto: BoletoDTO }) {
   return (
@@ -75,7 +87,7 @@ export function BoletosPage() {
       {
         onSuccess: () => {
           setPaying(null);
-          toast({ message: `“${boleto.description}” marcado como pago.` });
+          toast({ message: `${boletoLabel(boleto)} marcado como pago.` });
         },
       },
     );
@@ -87,7 +99,7 @@ export function BoletosPage() {
       {
         onSuccess: () =>
           toast({
-            message: `Pagamento de “${boleto.description}” estornado.`,
+            message: `Pagamento de ${boletoLabel(boleto)} estornado.`,
             action: { label: "Desfazer", onClick: () => setPayment.mutate({ id: boleto.id, paidAt: boleto.paidAt }) },
           }),
         onError: (err) => toast({ message: errorMessage(err), tone: "error" }),
@@ -101,7 +113,7 @@ export function BoletosPage() {
     remove.mutate(boleto.id, {
       onSuccess: () => {
         setDeleting(null);
-        toast({ message: `“${boleto.description}” excluído.` });
+        toast({ message: `${boletoLabel(boleto)} excluído.` });
       },
     });
   };
@@ -109,7 +121,7 @@ export function BoletosPage() {
   const hasFilter = Boolean(status || supplierId || dueMonth || search);
   const rowActions = (boleto: BoletoDTO) => (
     <PayableActions
-      label={boleto.description}
+      label={boletoLabel(boleto)}
       status={boleto.status}
       paymentCode={boleto.barcode}
       onPay={() => {
@@ -147,7 +159,7 @@ export function BoletosPage() {
               type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Buscar por descrição ou fornecedor"
+              placeholder="Buscar por nota ou fornecedor"
               aria-label="Buscar boletos"
               className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
             />
@@ -227,8 +239,7 @@ export function BoletosPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
-                  <th className="px-4 py-3">Boleto</th>
-                  <th className="px-4 py-3">Emissão</th>
+                  <th className="px-4 py-3">Fornecedor / Nota</th>
                   <th className="px-4 py-3">Vencimento</th>
                   <th className="px-4 py-3 text-right">Valor</th>
                   <th className="px-4 py-3">Status</th>
@@ -241,10 +252,8 @@ export function BoletosPage() {
                 {data.data.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50/60">
                     <td className="max-w-64 px-4 py-3">
-                      <p className="truncate font-medium text-slate-800">{b.description}</p>
-                      <p className="truncate text-xs text-slate-500">{supplierName(b.supplier)}</p>
+                      <SupplierInvoice boleto={b} />
                     </td>
-                    <td className="px-4 py-3 text-slate-600 tabular-nums">{formatDate(b.issueDate)}</td>
                     <td className="px-4 py-3">
                       <DueCell dueDate={b.dueDate} status={b.status} paidAt={b.paidAt} />
                     </td>
@@ -265,10 +274,7 @@ export function BoletosPage() {
             {data.data.map((b) => (
               <li key={b.id} className="rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-800">{b.description}</p>
-                    <p className="truncate text-xs text-slate-500">{supplierName(b.supplier)}</p>
-                  </div>
+                  <SupplierInvoice boleto={b} />
                   <StatusBadge status={b.status} />
                 </div>
                 <div className="mt-3 flex items-end justify-between gap-3">
@@ -287,7 +293,7 @@ export function BoletosPage() {
       <BoletoFormDialog open={formOpen} boleto={editing} defaultSupplierId={supplierId} onClose={() => setFormOpen(false)} />
 
       <PayDialog
-        item={paying && { title: paying.description, amountCents: paying.totalCents }}
+        item={paying && { title: `${boletoLabel(paying)} · ${supplierName(paying.supplier)}`, amountCents: paying.totalCents }}
         onConfirm={confirmPay}
         onClose={() => setPaying(null)}
         loading={setPayment.isPending}
@@ -306,7 +312,7 @@ export function BoletosPage() {
       >
         {deleting && (
           <>
-            <strong className="text-slate-800">{deleting.description}</strong> ({supplierName(deleting.supplier)}) de {formatBRL(deleting.totalCents)}{" "}
+            <strong className="text-slate-800">{boletoLabel(deleting)}</strong> ({supplierName(deleting.supplier)}) de {formatBRL(deleting.totalCents)}{" "}
             será excluído permanentemente.
           </>
         )}

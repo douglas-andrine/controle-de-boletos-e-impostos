@@ -43,14 +43,14 @@ export async function seedDemoUser(prisma: PrismaClient) {
 
   await prisma.boleto.createMany({
     data: [
-      { supplierId: aluguel.id, description: "Aluguel do escritório", amountCents: 350000, issueDate: day(-40), dueDate: day(-30), status: PaymentStatus.PAGO, paidAt: day(-31) },
-      { supplierId: energia.id, description: "Conta de energia", amountCents: 48790, issueDate: day(-25), dueDate: day(-5) },
-      { supplierId: internet.id, description: "Plano de internet 500MB", amountCents: 19990, feesCents: 400, issueDate: day(-20), dueDate: day(-2) },
-      { supplierId: aluguel.id, description: "Aluguel do escritório", amountCents: 350000, issueDate: day(-10), dueDate: day(2) },
-      { supplierId: contabil.id, description: "Honorários contábeis", amountCents: 120000, issueDate: day(-8), dueDate: day(5) },
-      { supplierId: papelaria.id, description: "Resmas de papel e toner", amountCents: 31550, issueDate: day(-3), dueDate: day(12) },
-      { supplierId: energia.id, description: "Conta de energia", amountCents: 51230, issueDate: day(-55), dueDate: day(-35), status: PaymentStatus.PAGO, paidAt: day(-36) },
-    ].map((b) => ({ ...b, userId: user.id, barcode: "34191790010104351004791020150008291070026000" })),
+      { supplierId: aluguel.id, invoiceNumber: "000318", amountCents: 350000, dueDate: day(-30), status: PaymentStatus.PAGO, paidAt: day(-31) },
+      { supplierId: energia.id, invoiceNumber: "784512", amountCents: 48790, dueDate: day(-5) },
+      { supplierId: internet.id, invoiceNumber: "102244", amountCents: 19990, dueDate: day(-2) },
+      { supplierId: aluguel.id, invoiceNumber: "000327", amountCents: 350000, dueDate: day(2) },
+      { supplierId: contabil.id, invoiceNumber: "2026/0145", amountCents: 120000, dueDate: day(5) },
+      { supplierId: papelaria.id, invoiceNumber: "009871", amountCents: 31550, dueDate: day(12) },
+      { supplierId: energia.id, invoiceNumber: "781190", amountCents: 51230, dueDate: day(-35), status: PaymentStatus.PAGO, paidAt: day(-36) },
+    ].map((b) => ({ ...b, userId: user.id })),
   });
 
   await prisma.tax.createMany({
