@@ -24,17 +24,20 @@ export const taxInputSchema = z.object({
 });
 export type TaxInput = z.infer<typeof taxInputSchema>;
 
+// O cadastro pede fornecedor, nota, vencimento e valor. Descrição, juros, emissão
+// e linha digitável seguem aceitos pela API (registros antigos) e só mudam quando enviados.
 export const boletoInputSchema = z
   .object({
     supplierId: z.string().min(1, "Selecione o fornecedor"),
-    description: z.string().trim().min(2, "Descreva o boleto"),
+    invoiceNumber: z.string().trim().min(1, "Informe o número da nota"),
     amountCents: cents.positive("O valor deve ser maior que zero"),
-    feesCents: cents.nonnegative("Juros/multa não podem ser negativos").default(0),
-    issueDate: isoDateSchema,
     dueDate: isoDateSchema,
+    description: optionalCode,
+    feesCents: cents.nonnegative("Juros/multa não podem ser negativos").optional(),
+    issueDate: isoDateSchema.optional(),
     barcode: optionalCode,
   })
-  .refine((b) => b.dueDate >= b.issueDate, {
+  .refine((b) => !b.issueDate || b.dueDate >= b.issueDate, {
     path: ["dueDate"],
     message: "O vencimento não pode ser anterior à emissão",
   });

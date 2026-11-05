@@ -47,11 +47,12 @@ export function serializeBoleto(b: Boleto & { supplier: SupplierRef }): BoletoDT
   return {
     id: b.id,
     supplier: { id: b.supplier.id, legalName: b.supplier.legalName, tradeName: b.supplier.tradeName },
+    invoiceNumber: b.invoiceNumber,
     description: b.description,
     amountCents: b.amountCents,
     feesCents: b.feesCents,
     totalCents: b.amountCents + b.feesCents,
-    issueDate: toISODate(b.issueDate),
+    issueDate: b.issueDate ? toISODate(b.issueDate) : null,
     dueDate: toISODate(b.dueDate),
     barcode: b.barcode,
     status: getEffectiveStatus(b),

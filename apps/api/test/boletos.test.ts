@@ -25,6 +25,7 @@ beforeEach(async () => {
 
 const baseBoleto = () => ({
   supplierId,
+  invoiceNumber: "784512",
   description: "Conta de energia",
   amountCents: 48790,
   feesCents: 1210,
@@ -48,6 +49,47 @@ describe("Boletos", () => {
       status: "PENDENTE",
       supplier: { id: supplierId, legalName: validSupplier.legalName, tradeName: validSupplier.tradeName },
     });
+  });
+
+  it("cadastra só com fornecedor, nota, vencimento e valor", async () => {
+    const payload = { supplierId, invoiceNumber: " 445566 ", dueDate: isoDay(5), amountCents: 50000 };
+    const res = await app.inject({ method: "POST", url: "/boletos", cookies, payload });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({
+      invoiceNumber: "445566",
+      description: null,
+      issueDate: null,
+      barcode: null,
+      feesCents: 0,
+      totalCents: 50000,
+    });
+  });
+
+  it("exige o número da nota", async () => {
+    const res = await createBoleto({ invoiceNumber: "  " });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().issues.invoiceNumber).toEqual(["Informe o número da nota"]);
+  });
+
+  it("PUT sem os campos antigos mantém descrição, juros, emissão e linha digitável", async () => {
+    const { id } = (await createBoleto()).json();
+    const payload = { supplierId, invoiceNumber: "999", dueDate: isoDay(7), amountCents: 1000 };
+    const put = await app.inject({ method: "PUT", url: `/boletos/${id}`, cookies, payload });
+    expect(put.json()).toMatchObject({
+      invoiceNumber: "999",
+      amountCents: 1000,
+      description: "Conta de energia",
+      feesCents: 1210,
+      issueDate: baseBoleto().issueDate,
+      barcode: baseBoleto().barcode,
+    });
+  });
+
+  it("busca pelo número da nota", async () => {
+    await createBoleto({ invoiceNumber: "112233", description: "A" });
+    await createBoleto({ invoiceNumber: "445566", description: "B" });
+    const res = await app.inject({ method: "GET", url: "/boletos?search=4455", cookies });
+    expect(res.json().data.map((b: { invoiceNumber: string }) => b.invoiceNumber)).toEqual(["445566"]);
   });
 
   it("assume juros zero quando não informado", async () => {

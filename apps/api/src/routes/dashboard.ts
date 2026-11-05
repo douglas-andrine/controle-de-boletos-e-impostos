@@ -41,8 +41,8 @@ function boletoToAgenda(b: BoletoWithSupplier, now: Date): AgendaItemDTO {
   return {
     type: "BOLETO",
     id: b.id,
-    title: b.description,
-    subtitle: b.supplier.tradeName ?? b.supplier.legalName,
+    title: b.supplier.tradeName ?? b.supplier.legalName ?? "Boleto",
+    subtitle: b.invoiceNumber ? `NF ${b.invoiceNumber}` : b.description,
     amountCents: b.amountCents + b.feesCents,
     dueDate: toISODate(b.dueDate),
     daysUntilDue: Math.round((b.dueDate.getTime() - now.getTime()) / DAY_MS),

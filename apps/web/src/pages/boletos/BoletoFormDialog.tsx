@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { boletoInputSchema, formatBRL, supplierName, todayISO, type BoletoDTO } from "@tributoleao/shared";
+import { boletoInputSchema, supplierName, type BoletoDTO } from "@tributoleao/shared";
 import { applyServerErrors } from "../../lib/forms";
 import { useSaveBoleto } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
@@ -18,26 +18,12 @@ import { useToast } from "../../components/ui/Toast";
 type FormInput = z.input<typeof boletoInputSchema>;
 type FormOutput = z.output<typeof boletoInputSchema>;
 
-const emptyForm = (supplierId = ""): FormInput => ({
-  supplierId,
-  description: "",
-  amountCents: 0,
-  feesCents: 0,
-  issueDate: todayISO(),
-  dueDate: "",
-  barcode: "",
-});
+// Só fornecedor, nota, vencimento e valor: descrição, juros, emissão e linha
+// digitável de boletos antigos não são enviados, e a API os preserva.
+const emptyForm = (supplierId = ""): FormInput => ({ supplierId, invoiceNumber: "", dueDate: "", amountCents: 0 });
 
 function toFormValues(b: BoletoDTO): FormInput {
-  return {
-    supplierId: b.supplier.id,
-    description: b.description,
-    amountCents: b.amountCents,
-    feesCents: b.feesCents,
-    issueDate: b.issueDate,
-    dueDate: b.dueDate,
-    barcode: b.barcode ?? "",
-  };
+  return { supplierId: b.supplier.id, invoiceNumber: b.invoiceNumber ?? "", dueDate: b.dueDate, amountCents: b.amountCents };
 }
 
 type Props = {
@@ -68,8 +54,6 @@ export function BoletoFormDialog({ open, boleto, defaultSupplierId, onClose }: P
     reset(boleto ? toFormValues(boleto) : emptyForm(defaultSupplierId));
     setFormError(null);
   }, [open, boleto, defaultSupplierId, reset]);
-
-  const [amountCents = 0, feesCents = 0] = useWatch({ control, name: ["amountCents", "feesCents"] });
 
   const onSubmit = handleSubmit((input) => {
     setFormError(null);
@@ -111,41 +95,25 @@ export function BoletoFormDialog({ open, boleto, defaultSupplierId, onClose }: P
             ))}
           </SelectField>
 
-          <Field label="Descrição *" placeholder="Ex.: Conta de energia de outubro" error={errors.description?.message} {...register("description")} />
+          {/* "Nota fiscal" e não "Número": evita o Chrome tratar o campo como cartão */}
+          <Field
+            label="Nota fiscal *"
+            placeholder="Ex.: 123456"
+            autoComplete="off"
+            error={errors.invoiceNumber?.message}
+            {...register("invoiceNumber")}
+          />
 
           <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Vencimento *" type="date" error={errors.dueDate?.message} {...register("dueDate")} />
             <Controller
               control={control}
               name="amountCents"
               render={({ field }) => (
-                <MoneyField label="Valor original *" name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} error={errors.amountCents?.message} />
+                <MoneyField label="Valor *" name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} error={errors.amountCents?.message} />
               )}
             />
-            <Controller
-              control={control}
-              name="feesCents"
-              render={({ field }) => (
-                <MoneyField label="Juros / multa" name={field.name} value={field.value ?? 0} onChange={field.onChange} onBlur={field.onBlur} error={errors.feesCents?.message} />
-              )}
-            />
-            <Field label="Emissão *" type="date" error={errors.issueDate?.message} {...register("issueDate")} />
-            <Field label="Vencimento *" type="date" error={errors.dueDate?.message} {...register("dueDate")} />
           </div>
-
-          {feesCents > 0 && (
-            <p className="rounded-lg bg-surface px-3 py-2 text-sm text-slate-600">
-              Total a pagar: <strong className="text-slate-800 tabular-nums">{formatBRL(amountCents + feesCents)}</strong>
-            </p>
-          )}
-
-          <Field
-            label="Linha digitável / código de barras"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="Cole aqui a linha digitável do boleto"
-            error={errors.barcode?.message}
-            {...register("barcode")}
-          />
 
           <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={onClose}>

@@ -12,15 +12,18 @@ import { serializeBoleto } from "../lib/serializers";
 const idParams = z.object({ id: z.string().min(1) });
 const withSupplier = { supplier: { select: { id: true, legalName: true, tradeName: true } } } as const;
 
+// Descrição, juros, emissão e linha digitável saíram do formulário: só mudam quando
+// vêm no corpo, para a edição não apagar os de boletos antigos.
 function toBoletoData(input: BoletoInput) {
   return {
     supplierId: input.supplierId,
-    description: input.description,
+    invoiceNumber: input.invoiceNumber,
     amountCents: input.amountCents,
-    feesCents: input.feesCents,
-    issueDate: dateFromISO(input.issueDate),
     dueDate: dateFromISO(input.dueDate),
-    barcode: input.barcode ?? null,
+    ...(input.description !== undefined && { description: input.description }),
+    ...(input.feesCents !== undefined && { feesCents: input.feesCents }),
+    ...(input.issueDate !== undefined && { issueDate: dateFromISO(input.issueDate) }),
+    ...(input.barcode !== undefined && { barcode: input.barcode }),
   };
 }
 
@@ -42,6 +45,7 @@ export async function boletoRoutes(app: FastifyInstance) {
       ...(supplierId && { supplierId }),
       ...(search && {
         OR: [
+          { invoiceNumber: { contains: search, mode: "insensitive" } },
           { description: { contains: search, mode: "insensitive" } },
           { supplier: { legalName: { contains: search, mode: "insensitive" } } },
           { supplier: { tradeName: { contains: search, mode: "insensitive" } } },
