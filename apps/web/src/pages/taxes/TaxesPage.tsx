@@ -6,7 +6,6 @@ import {
   Clock,
   Landmark,
   Loader2,
-  Package,
   PackageCheck,
   PackageX,
   Plus,
@@ -303,11 +302,13 @@ export function TaxesPage() {
           <button
             type="button"
             onClick={() => markDelivery(tax, true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50"
-            aria-label={`Marcar mercadoria de ${tax.name} como entregue`}
+            // Mostra a situação atual (não entregue); o clique registra a entrega
+            className="inline-flex items-center gap-1.5 rounded-lg border border-danger/40 bg-danger/5 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-danger hover:bg-danger/10"
+            aria-label={`Mercadoria de ${tax.name} não entregue: marcar como entregue`}
+            title="Clique para marcar como entregue"
           >
-            <Package className="size-4" aria-hidden />
-            Entregue
+            <PackageX className="size-4" aria-hidden />
+            Não entregue
           </button>
         )
       }
