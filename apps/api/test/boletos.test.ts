@@ -178,3 +178,71 @@ describe("Boletos", () => {
     expect((await app.inject({ method: "GET", url: `/boletos/${id}`, cookies })).statusCode).toBe(404);
   });
 });
+
+describe("Boletos: pagamento no cadastro e entrega da mercadoria", () => {
+  const newBoleto = (overrides: object = {}) => ({ supplierId, invoiceNumber: "123", dueDate: isoDay(5), amountCents: 10000, ...overrides });
+  const post = (overrides: object = {}) => app.inject({ method: "POST", url: "/boletos", cookies, payload: newBoleto(overrides) });
+  const list = async (query: string) => (await app.inject({ method: "GET", url: `/boletos?${query}`, cookies })).json();
+
+  it("cadastra já pago informando a data do pagamento", async () => {
+    const res = await post({ paidAt: isoDay(-2) });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ status: "PAGO", paidAt: isoDay(-2) });
+
+    // Sem paidAt (ou null) fica pendente
+    expect((await post()).json()).toMatchObject({ status: "PENDENTE", paidAt: null });
+    expect((await post({ paidAt: null })).json()).toMatchObject({ status: "PENDENTE", paidAt: null });
+  });
+
+  it("recusa data de pagamento no futuro", async () => {
+    const res = await post({ paidAt: isoDay(1) });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().issues.paidAt).toBeDefined();
+  });
+
+  it("na edição, paidAt muda o pagamento e a ausência dele preserva", async () => {
+    const { id } = (await post()).json();
+    const put = (payload: object) => app.inject({ method: "PUT", url: `/boletos/${id}`, cookies, payload: newBoleto(payload) });
+
+    expect((await put({ paidAt: isoDay(0) })).json()).toMatchObject({ status: "PAGO", paidAt: isoDay(0) });
+    expect((await put({})).json()).toMatchObject({ status: "PAGO", paidAt: isoDay(0) });
+    expect((await put({ paidAt: null })).json()).toMatchObject({ status: "PENDENTE", paidAt: null });
+  });
+
+  it("registra a entrega e conta o prazo de 15 dias a partir do pagamento", async () => {
+    expect((await post()).json()).toMatchObject({ goodsDelivered: null, deliveryStatus: null, deliveryDeadline: null });
+    expect((await post({ goodsDelivered: true })).json()).toMatchObject({ goodsDelivered: true, deliveryStatus: "ENTREGUE" });
+    expect((await post({ goodsDelivered: false })).json()).toMatchObject({ deliveryStatus: "AGUARDANDO", deliveryDeadline: null });
+    expect((await post({ goodsDelivered: false, paidAt: isoDay(-15) })).json()).toMatchObject({
+      deliveryStatus: "AGUARDANDO",
+      deliveryDeadline: isoDay(0),
+    });
+    expect((await post({ goodsDelivered: false, paidAt: isoDay(-16) })).json()).toMatchObject({ deliveryStatus: "ATRASADA" });
+  });
+
+  it("filtra pela entrega e pela entrega atrasada", async () => {
+    await post({ invoiceNumber: "ENTREGUE", goodsDelivered: true });
+    await post({ invoiceNumber: "AGUARDA", goodsDelivered: false });
+    await post({ invoiceNumber: "ATRASADO", goodsDelivered: false, paidAt: isoDay(-20) });
+    await post({ invoiceNumber: "SEM-ENTREGA" });
+
+    const notas = (body: { data: { invoiceNumber: string }[] }) => body.data.map((b) => b.invoiceNumber).sort();
+    expect(notas(await list("goodsDelivered=true"))).toEqual(["ENTREGUE"]);
+    expect(notas(await list("goodsDelivered=false"))).toEqual(["AGUARDA", "ATRASADO"]);
+    expect(notas(await list("deliveryLate=true"))).toEqual(["ATRASADO"]);
+    expect((await list("")).meta.total).toBe(4);
+  });
+
+  it("marca e desmarca a entrega pela rota própria", async () => {
+    const { id } = (await post({ goodsDelivered: false })).json();
+    const mark = await app.inject({ method: "PATCH", url: `/boletos/${id}/delivery`, cookies, payload: { delivered: true } });
+    expect(mark.json()).toMatchObject({ goodsDelivered: true, deliveryStatus: "ENTREGUE" });
+
+    const unmark = await app.inject({ method: "PATCH", url: `/boletos/${id}/delivery`, cookies, payload: { delivered: false } });
+    expect(unmark.json()).toMatchObject({ goodsDelivered: false, deliveryStatus: "AGUARDANDO" });
+
+    const noDelivery = (await post()).json();
+    const res = await app.inject({ method: "PATCH", url: `/boletos/${noDelivery.id}/delivery`, cookies, payload: { delivered: true } });
+    expect(res.statusCode).toBe(409);
+  });
+});

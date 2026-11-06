@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Receipt, Search, X } from "lucide-react";
+import { Loader2, PackageX, Plus, Receipt, Search, X } from "lucide-react";
 import { EFFECTIVE_STATUSES, formatBRL, supplierName, type BoletoDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
-import { useBoletos, useDeleteBoleto, useSetBoletoPayment } from "../../lib/boletos";
+import { useBoletos, useDeleteBoleto, useSetBoletoDelivery, useSetBoletoPayment } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useListFilters } from "../../lib/useListFilters";
@@ -13,6 +13,7 @@ import { useToast } from "../../components/ui/Toast";
 import { StatusBadge } from "../../components/StatusBadge";
 import { DueCell, PayableActions, StatusTabs } from "../../components/payables";
 import { PayDialog } from "../../components/PayDialog";
+import { DELIVERY_FILTERS, DeliveryCell, NotDeliveredButton, parseDeliveryFilter } from "../../components/delivery";
 import { BoletoFormDialog } from "./BoletoFormDialog";
 
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
@@ -44,12 +45,13 @@ const filterInput =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-2 focus:outline-navy/30";
 
 export function BoletosPage() {
-  // Filtros na URL: ?status=PENDENTE&fornecedor=<id>&venc=2026-10&q=energia&page=2
+  // Filtros na URL: ?status=PENDENTE&fornecedor=<id>&venc=2026-10&entrega=nao&q=energia&page=2
   const { searchParams, page, setFilter, goToPage, clearFilters } = useListFilters();
   const statusParam = searchParams.get("status");
   const status = EFFECTIVE_STATUSES.find((s) => s === statusParam);
   const supplierId = searchParams.get("fornecedor") || undefined;
   const dueMonth = searchParams.get("venc") || undefined;
+  const { delivery, goodsDelivered, deliveryLate } = parseDeliveryFilter(searchParams.get("entrega"));
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const search = useDebouncedValue(searchInput.trim());
 
@@ -58,9 +60,10 @@ export function BoletosPage() {
   const [paying, setPaying] = useState<BoletoDTO | null>(null);
   const [deleting, setDeleting] = useState<BoletoDTO | null>(null);
 
-  const { data, isPending, isError, isFetching, refetch } = useBoletos({ page, status, supplierId, dueMonth, search });
+  const { data, isPending, isError, isFetching, refetch } = useBoletos({ page, status, supplierId, dueMonth, goodsDelivered, deliveryLate, search });
   const suppliers = useSupplierOptions();
   const setPayment = useSetBoletoPayment();
+  const setDelivery = useSetBoletoDelivery();
   const remove = useDeleteBoleto();
   const toast = useToast();
 
@@ -107,6 +110,20 @@ export function BoletosPage() {
     );
   };
 
+  const markDelivery = (boleto: BoletoDTO, delivered: boolean) => {
+    setDelivery.mutate(
+      { id: boleto.id, delivered },
+      {
+        onSuccess: () =>
+          toast({
+            message: delivered ? `Entrega de ${boletoLabel(boleto)} registrada.` : `Entrega de ${boletoLabel(boleto)} desmarcada.`,
+            action: { label: "Desfazer", onClick: () => setDelivery.mutate({ id: boleto.id, delivered: !delivered }) },
+          }),
+        onError: (err) => toast({ message: errorMessage(err), tone: "error" }),
+      },
+    );
+  };
+
   const confirmDelete = () => {
     if (!deleting) return;
     const boleto = deleting;
@@ -118,7 +135,7 @@ export function BoletosPage() {
     });
   };
 
-  const hasFilter = Boolean(status || supplierId || dueMonth || search);
+  const hasFilter = Boolean(status || supplierId || dueMonth || delivery || search);
   const rowActions = (boleto: BoletoDTO) => (
     <PayableActions
       label={boletoLabel(boleto)}
@@ -134,8 +151,12 @@ export function BoletosPage() {
         remove.reset();
         setDeleting(boleto);
       }}
+      paidAction={boleto.goodsDelivered === false && <NotDeliveredButton label={boletoLabel(boleto)} onClick={() => markDelivery(boleto, true)} />}
+      menuItems={boleto.goodsDelivered ? [{ label: "Desmarcar entrega", Icon: PackageX, onSelect: () => markDelivery(boleto, false) }] : []}
     />
   );
+
+  const rowAccent = (boleto: BoletoDTO) => (boleto.deliveryStatus === "ATRASADA" ? "shadow-[inset_3px_0_0_var(--color-danger)]" : "");
 
   return (
     <div className="space-y-6">
@@ -197,6 +218,20 @@ export function BoletosPage() {
             />
           </div>
 
+          <select
+            value={delivery?.value ?? ""}
+            onChange={(e) => setFilter("entrega", e.target.value || undefined)}
+            aria-label="Filtrar por entrega da mercadoria"
+            className={`${filterInput} sm:max-w-56`}
+          >
+            <option value="">Toda entrega</option>
+            {DELIVERY_FILTERS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+
           {hasFilter && (
             <button
               type="button"
@@ -242,7 +277,8 @@ export function BoletosPage() {
                   <th className="px-4 py-3">Fornecedor / Nota</th>
                   <th className="px-4 py-3">Vencimento</th>
                   <th className="px-4 py-3 text-right">Valor</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Pagamento</th>
+                  <th className="px-4 py-3">Entrega</th>
                   <th className="px-4 py-3">
                     <span className="sr-only">Ações</span>
                   </th>
@@ -250,7 +286,7 @@ export function BoletosPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data.data.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/60">
+                  <tr key={b.id} className={`hover:bg-slate-50/60 ${rowAccent(b)}`}>
                     <td className="max-w-64 px-4 py-3">
                       <SupplierInvoice boleto={b} />
                     </td>
@@ -263,6 +299,9 @@ export function BoletosPage() {
                     <td className="px-4 py-3">
                       <StatusBadge status={b.status} />
                     </td>
+                    <td className="px-4 py-3">
+                      <DeliveryCell item={b} />
+                    </td>
                     <td className="px-4 py-3">{rowActions(b)}</td>
                   </tr>
                 ))}
@@ -272,10 +311,13 @@ export function BoletosPage() {
 
           <ul className="space-y-3 md:hidden">
             {data.data.map((b) => (
-              <li key={b.id} className="rounded-lg border border-slate-200 bg-white p-4">
+              <li key={b.id} className={`rounded-lg border border-slate-200 bg-white p-4 ${rowAccent(b)}`}>
                 <div className="flex items-start justify-between gap-3">
                   <SupplierInvoice boleto={b} />
-                  <StatusBadge status={b.status} />
+                  <div className="flex flex-col items-end gap-1.5">
+                    <StatusBadge status={b.status} />
+                    {b.deliveryStatus && <DeliveryCell item={b} />}
+                  </div>
                 </div>
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <DueCell dueDate={b.dueDate} status={b.status} paidAt={b.paidAt} />

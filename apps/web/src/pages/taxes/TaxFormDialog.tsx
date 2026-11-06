@@ -15,6 +15,7 @@ import { SelectField } from "../../components/ui/SelectField";
 import { Button } from "../../components/ui/Button";
 import { Alert } from "../../components/ui/Alert";
 import { useToast } from "../../components/ui/Toast";
+import { DeliverySelect } from "../../components/delivery";
 
 type FormInput = z.input<typeof taxInputSchema>;
 type FormOutput = z.output<typeof taxInputSchema>;
@@ -43,8 +44,6 @@ function toFormValues(tax: TaxDTO): FormInput {
     goodsDelivered: tax.goodsDelivered,
   };
 }
-
-const deliveryValue = (v: boolean | null | undefined) => (v == null ? "" : String(v));
 
 type Props = { open: boolean; tax: TaxDTO | null; onClose: () => void };
 
@@ -119,19 +118,7 @@ export function TaxFormDialog({ open, tax, onClose }: Props) {
           <Controller
             control={control}
             name="goodsDelivered"
-            render={({ field }) => (
-              <SelectField
-                label="Mercadoria entregue?"
-                name={field.name}
-                value={deliveryValue(field.value)}
-                onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value === "true")}
-                onBlur={field.onBlur}
-              >
-                <option value="">Não se aplica</option>
-                <option value="true">Sim, entregue</option>
-                <option value="false">Não, ainda não entregue</option>
-              </SelectField>
-            )}
+            render={({ field }) => <DeliverySelect name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} />}
           />
 
           <div className="sm:col-span-2">

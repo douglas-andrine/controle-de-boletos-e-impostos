@@ -26,9 +26,7 @@ const payableFilters = {
   search: optionalSearch,
 };
 
-export const taxListQuerySchema = paginationSchema.extend({
-  ...payableFilters,
-  referenceMonth: monthSchema.optional(),
+const deliveryFilters = {
   goodsDelivered: z
     .enum(["true", "false"])
     .optional()
@@ -38,11 +36,18 @@ export const taxListQuerySchema = paginationSchema.extend({
     .enum(["true"])
     .optional()
     .transform((v) => v === "true"),
+};
+
+export const taxListQuerySchema = paginationSchema.extend({
+  ...payableFilters,
+  ...deliveryFilters,
+  referenceMonth: monthSchema.optional(),
 });
 export type TaxListQuery = z.infer<typeof taxListQuerySchema>;
 
 export const boletoListQuerySchema = paginationSchema.extend({
   ...payableFilters,
+  ...deliveryFilters,
   supplierId: z.string().min(1).optional(),
 });
 export type BoletoListQuery = z.infer<typeof boletoListQuerySchema>;

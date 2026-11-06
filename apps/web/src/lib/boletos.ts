@@ -9,6 +9,8 @@ export type BoletoFilters = {
   status?: EffectiveStatus;
   supplierId?: string;
   dueMonth?: string; // AAAA-MM: vira o intervalo dueFrom/dueTo do mês
+  goodsDelivered?: boolean;
+  deliveryLate?: boolean;
   search?: string;
 };
 
@@ -22,7 +24,7 @@ function monthRange(month: string) {
 const invalidate = (queryClient: QueryClient) =>
   Promise.all(["boletos", "dashboard", "suppliers"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 
-export function useBoletos({ page, status, supplierId, dueMonth, search }: BoletoFilters) {
+export function useBoletos({ page, status, supplierId, dueMonth, goodsDelivered, deliveryLate, search }: BoletoFilters) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(BOLETOS_PAGE_SIZE) });
   if (status) params.set("status", status);
   if (supplierId) params.set("supplierId", supplierId);
@@ -31,10 +33,12 @@ export function useBoletos({ page, status, supplierId, dueMonth, search }: Bolet
     params.set("dueFrom", dueFrom);
     params.set("dueTo", dueTo);
   }
+  if (goodsDelivered !== undefined) params.set("goodsDelivered", String(goodsDelivered));
+  if (deliveryLate) params.set("deliveryLate", "true");
   if (search) params.set("search", search);
 
   return useQuery({
-    queryKey: ["boletos", { page, status, supplierId, dueMonth, search }],
+    queryKey: ["boletos", { page, status, supplierId, dueMonth, goodsDelivered, deliveryLate, search }],
     queryFn: () => api<Paginated<BoletoDTO>>(`/boletos?${params}`),
     placeholderData: keepPreviousData,
   });
@@ -67,6 +71,15 @@ export function useSetBoletoPayment() {
       paidAt
         ? api<BoletoDTO>(`/boletos/${id}/pay`, { method: "PATCH", body: { paidAt } })
         : api<BoletoDTO>(`/boletos/${id}/unpay`, { method: "PATCH" }),
+    onSuccess: () => invalidate(queryClient),
+  });
+}
+
+export function useSetBoletoDelivery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, delivered }: { id: string; delivered: boolean }) =>
+      api<BoletoDTO>(`/boletos/${id}/delivery`, { method: "PATCH", body: { delivered } }),
     onSuccess: () => invalidate(queryClient),
   });
 }

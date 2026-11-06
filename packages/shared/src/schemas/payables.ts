@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { todayISO } from "../status";
 
 const cents = z.number().int("Valor em centavos deve ser inteiro");
 export const isoDateSchema = z.iso.date("Informe uma data válida");
@@ -24,7 +25,7 @@ export const taxInputSchema = z.object({
 });
 export type TaxInput = z.infer<typeof taxInputSchema>;
 
-// O cadastro pede fornecedor, vencimento, valor e a nota (opcional). Descrição, juros, emissão
+// O cadastro pede fornecedor, vencimento, valor, a nota (opcional), a entrega e se já foi pago. Descrição, juros, emissão
 // e linha digitável seguem aceitos pela API (registros antigos) e só mudam quando enviados.
 export const boletoInputSchema = z
   .object({
@@ -36,10 +37,17 @@ export const boletoInputSchema = z
     feesCents: cents.nonnegative("Juros/multa não podem ser negativos").optional(),
     issueDate: isoDateSchema.optional(),
     barcode: optionalCode,
+    goodsDelivered: z.boolean().nullable().default(null), // null = não se aplica
+    // Data do pagamento informada no cadastro; null = não pago. Ausente, a edição não mexe no pagamento.
+    paidAt: isoDateSchema.nullable().optional(),
   })
   .refine((b) => !b.issueDate || b.dueDate >= b.issueDate, {
     path: ["dueDate"],
     message: "O vencimento não pode ser anterior à emissão",
+  })
+  .refine((b) => !b.paidAt || b.paidAt <= todayISO(), {
+    path: ["paidAt"],
+    message: "A data do pagamento não pode ser no futuro",
   });
 export type BoletoInput = z.infer<typeof boletoInputSchema>;
 

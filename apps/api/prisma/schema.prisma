@@ -94,22 +94,23 @@ model Tax {
 }
 
 model Boleto {
-  id            String        @id @default(cuid())
-  userId        String
-  supplierId    String
-  invoiceNumber String? // nota fiscal do boleto (opcional)
-  // O cadastro pede só fornecedor, nota (opcional), vencimento e valor; os campos abaixo ficam de registros antigos
-  description   String?
-  amountCents   Int
-  feesCents     Int           @default(0) // juros/multa
-  issueDate     DateTime?     @db.Date
-  dueDate       DateTime      @db.Date
-  barcode       String?
-  status        PaymentStatus @default(PENDENTE)
-  paidAt        DateTime?
-  receiptPath   String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  userId         String
+  supplierId     String
+  invoiceNumber  String? // nota fiscal do boleto (opcional)
+  // Descrição, juros, emissão e linha digitável saíram do cadastro e ficam de registros antigos
+  description    String?
+  amountCents    Int
+  feesCents      Int           @default(0) // juros/multa
+  issueDate      DateTime?     @db.Date
+  dueDate        DateTime      @db.Date
+  barcode        String?
+  status         PaymentStatus @default(PENDENTE)
+  paidAt         DateTime?
+  receiptPath    String?
+  goodsDelivered Boolean? // mercadoria entregue; null = não se aplica
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Restrict: fornecedor com boletos não pode ser excluído (preserva histórico)

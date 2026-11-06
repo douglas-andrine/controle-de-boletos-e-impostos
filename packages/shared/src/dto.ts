@@ -74,6 +74,9 @@ export type BoletoDTO = {
   issueDate: string | null; // campo antigo, não está mais no cadastro
   dueDate: string;
   barcode: string | null;
+  goodsDelivered: boolean | null; // null = não se aplica
+  deliveryStatus: DeliveryStatus | null; // derivado, como nos impostos
+  deliveryDeadline: string | null;
   status: EffectiveStatus;
   paidAt: string | null;
   hasReceipt: boolean;
