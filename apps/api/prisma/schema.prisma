@@ -97,8 +97,8 @@ model Boleto {
   id            String        @id @default(cuid())
   userId        String
   supplierId    String
-  invoiceNumber String? // nota fiscal do boleto (obrigatória na API; nula só em registros antigos)
-  // O cadastro pede só fornecedor, nota, vencimento e valor; os campos abaixo ficam de registros antigos
+  invoiceNumber String? // nota fiscal do boleto (opcional)
+  // O cadastro pede só fornecedor, nota (opcional), vencimento e valor; os campos abaixo ficam de registros antigos
   description   String?
   amountCents   Int
   feesCents     Int           @default(0) // juros/multa
