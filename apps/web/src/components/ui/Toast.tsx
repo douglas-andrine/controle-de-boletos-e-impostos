@@ -30,14 +30,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div aria-live="polite" className="fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4">
+      {/* pointer-events-none: a faixa ocupa a largura toda e bloquearia os botões do rodapé da sidebar */}
+      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4">
         {toasts.map((toast) => {
           const Icon = toast.tone === "error" ? CircleAlert : CircleCheck;
           return (
             <div
               key={toast.id}
               role="status"
-              className="flex w-full max-w-md items-center gap-3 rounded-lg bg-navy px-4 py-3 text-sm text-white shadow-lg"
+              className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-lg bg-navy px-4 py-3 text-sm text-white shadow-lg"
             >
               <Icon className={`size-5 shrink-0 ${toast.tone === "error" ? "text-danger" : "text-emerald-400"}`} aria-hidden />
               <span className="flex-1">{toast.message}</span>

@@ -14,6 +14,13 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export const createUserSchema = registerSchema;
 export type CreateUserInput = RegisterInput;
 
+/** Definir (conta só Google) ou trocar a própria senha. A senha atual só é exigida de quem já tem uma. */
+export const setPasswordSchema = z.object({
+  currentPassword: z.string().optional(),
+  password: registerSchema.shape.password,
+});
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
+
 export const loginSchema = z.object({
   email: emailField,
   password: z.string().min(1, "Informe a senha"),

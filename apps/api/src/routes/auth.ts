@@ -2,11 +2,12 @@ import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { AuthProvider, type User } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { loginSchema, registerSchema } from "@tributoleao/shared";
+import { loginSchema, registerSchema, setPasswordSchema } from "@tributoleao/shared";
 import { env } from "../env";
 import { prisma } from "../lib/prisma";
 import { endSession, startSession } from "../lib/session";
-import { ensureDemoUser } from "../lib/demo";
+import { DEMO_EMAIL, ensureDemoUser } from "../lib/demo";
+import { HttpError } from "../lib/errors";
 import { fetchGoogleProfile, googleAuthUrl, isGoogleConfigured, type GoogleProfile } from "../lib/google";
 
 export const BCRYPT_ROUNDS = 10;
@@ -20,8 +21,18 @@ const OAUTH_STATE_COOKIE = "tl_oauth_state";
 const OAUTH_STATE_TTL_SECONDS = 60 * 10; // tempo para concluir a tela do Google
 
 function toPublicUser(user: User) {
-  return { id: user.id, name: user.name, email: user.email, provider: user.provider, role: user.role };
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    provider: user.provider,
+    role: user.role,
+    hasPassword: user.passwordHash !== null,
+  };
 }
+
+/** 400 no formato do error handler, para o front marcar o campo. */
+const invalidCurrentPassword = (message: string) => ({ message, issues: { currentPassword: [message] } });
 
 const loginErrorUrl = (code: string) => `${env.WEB_ORIGIN}/login?erro=${code}`;
 
@@ -136,4 +147,33 @@ export async function authRoutes(app: FastifyInstance) {
     }
     return { user: toPublicUser(user) };
   });
+
+  // Quem entrou só pelo Google define uma senha; quem já tem senha troca informando a atual
+  app.put(
+    "/auth/password",
+    { preHandler: app.authenticate, config: authRateLimit },
+    async (request, reply) => {
+      const { currentPassword, password } = setPasswordSchema.parse(request.body);
+      const user = await prisma.user.findUnique({ where: { id: request.user.sub } });
+      if (!user) {
+        endSession(reply);
+        return reply.status(401).send({ message: "Usuário não encontrado" });
+      }
+      // A senha do demo é pública: trocá-la tiraria o acesso dos outros visitantes
+      if (user.email === DEMO_EMAIL) throw new HttpError(403, "A conta de demonstração não pode mudar de senha");
+
+      if (user.passwordHash) {
+        if (!currentPassword) return reply.status(400).send(invalidCurrentPassword("Informe a senha atual"));
+        if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+          return reply.status(400).send(invalidCurrentPassword("Senha atual incorreta"));
+        }
+      }
+
+      const updated = await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS) },
+      });
+      return { user: toPublicUser(updated) };
+    },
+  );
 }

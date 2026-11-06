@@ -4,6 +4,7 @@ import { buildApp } from "../src/app";
 import { prisma } from "../src/lib/prisma";
 import { SESSION_COOKIE } from "../src/lib/session";
 import { DEMO_EMAIL } from "../src/lib/demo";
+import { createSession } from "./helpers";
 
 let app: FastifyInstance;
 
@@ -148,5 +149,87 @@ describe("POST /auth/demo", () => {
 
     const second = await app.inject({ method: "POST", url: "/auth/demo" });
     expect(second.json().user.id).toBe(first.json().user.id);
+  });
+});
+
+describe("PUT /auth/password", () => {
+  async function login(password: string) {
+    return app.inject({ method: "POST", url: "/auth/login", payload: { email: validUser.email, password } });
+  }
+
+  it("retorna 401 sem sessão", async () => {
+    const res = await app.inject({ method: "PUT", url: "/auth/password", payload: { password: "novaSenha123" } });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("define a senha de conta criada só pelo Google, sem pedir senha atual", async () => {
+    const user = await prisma.user.create({
+      data: { name: "Maria", email: validUser.email, googleId: "google-123", provider: "GOOGLE" },
+    });
+    const token = app.jwt.sign({ sub: user.id });
+
+    const before = await app.inject({ method: "GET", url: "/auth/me", cookies: { [SESSION_COOKIE]: token } });
+    expect(before.json().user.hasPassword).toBe(false);
+
+    const res = await app.inject({
+      method: "PUT",
+      url: "/auth/password",
+      cookies: { [SESSION_COOKIE]: token },
+      payload: { password: "novaSenha123" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user.hasPassword).toBe(true);
+
+    expect((await login("novaSenha123")).statusCode).toBe(200);
+    // O vínculo com o Google continua
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).googleId).toBe("google-123");
+  });
+
+  it("troca a senha exigindo a senha atual correta", async () => {
+    const reg = await app.inject({ method: "POST", url: "/auth/register", payload: validUser });
+    const token = sessionCookie(reg)!.value;
+    const cookies = { [SESSION_COOKIE]: token };
+    expect(reg.json().user.hasPassword).toBe(true);
+
+    const missing = await app.inject({ method: "PUT", url: "/auth/password", cookies, payload: { password: "novaSenha123" } });
+    expect(missing.statusCode).toBe(400);
+    expect(missing.json().issues.currentPassword).toBeDefined();
+
+    const wrong = await app.inject({
+      method: "PUT",
+      url: "/auth/password",
+      cookies,
+      payload: { currentPassword: "senhaErrada", password: "novaSenha123" },
+    });
+    expect(wrong.statusCode).toBe(400);
+    expect(wrong.json().issues.currentPassword).toEqual(["Senha atual incorreta"]);
+
+    const ok = await app.inject({
+      method: "PUT",
+      url: "/auth/password",
+      cookies,
+      payload: { currentPassword: validUser.password, password: "novaSenha123" },
+    });
+    expect(ok.statusCode).toBe(200);
+    expect((await login(validUser.password)).statusCode).toBe(401);
+    expect((await login("novaSenha123")).statusCode).toBe(200);
+  });
+
+  it("recusa senha curta com erro no campo", async () => {
+    const { cookies } = await createSession(app);
+    const res = await app.inject({ method: "PUT", url: "/auth/password", cookies, payload: { password: "123" } });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().issues.password).toBeDefined();
+  });
+
+  it("não deixa mudar a senha pública da conta demo", async () => {
+    const demo = await app.inject({ method: "POST", url: "/auth/demo" });
+    const res = await app.inject({
+      method: "PUT",
+      url: "/auth/password",
+      cookies: { [SESSION_COOKIE]: sessionCookie(demo)!.value },
+      payload: { currentPassword: "demo1234", password: "outraSenha123" },
+    });
+    expect(res.statusCode).toBe(403);
   });
 });

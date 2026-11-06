@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { Building2, Landmark, LayoutDashboard, LogOut, Menu, Receipt, Users, X } from "lucide-react";
+import { Building2, KeyRound, Landmark, LayoutDashboard, LogOut, Menu, Receipt, Users, X } from "lucide-react";
 import { Logo } from "../components/Logo";
-import { useCurrentUser, useLogout } from "../lib/auth";
+import { PasswordDialog } from "../components/PasswordDialog";
+import { DEMO_EMAIL, useCurrentUser, useLogout } from "../lib/auth";
 
 const navItems = [
   { to: "/", label: "Dashboard", Icon: LayoutDashboard, end: true },
@@ -17,6 +18,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const navigate = useNavigate();
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   return (
     <div className="flex h-full flex-col bg-navy text-slate-300">
@@ -46,11 +48,25 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="border-t border-white/10 p-4">
         <p className="truncate text-sm font-medium text-white">{user?.name}</p>
         <p className="truncate text-xs text-slate-400">{user?.email}</p>
+        {/* A senha do demo é pública e a API recusa a troca */}
+        {user && user.email !== DEMO_EMAIL && (
+          <>
+            <button
+              type="button"
+              onClick={() => setPasswordOpen(true)}
+              className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light hover:text-white"
+            >
+              <KeyRound className="size-4" aria-hidden />
+              {user.hasPassword ? "Alterar senha" : "Definir senha"}
+            </button>
+            <PasswordDialog open={passwordOpen} onClose={() => setPasswordOpen(false)} hasPassword={user.hasPassword} />
+          </>
+        )}
         <button
           type="button"
           onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
           disabled={logout.isPending}
-          className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light hover:text-white disabled:opacity-60"
+          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light hover:text-white disabled:opacity-60"
         >
           <LogOut className="size-4" aria-hidden />
           Sair

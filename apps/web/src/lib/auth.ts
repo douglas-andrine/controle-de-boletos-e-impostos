@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LoginInput, RegisterInput, UserRole } from "@tributoleao/shared";
+import type { LoginInput, RegisterInput, SetPasswordInput, UserRole } from "@tributoleao/shared";
 import { api, ApiError } from "./api";
 
 export type User = {
@@ -9,6 +9,7 @@ export type User = {
   email: string;
   provider: "LOCAL" | "GOOGLE";
   role: UserRole;
+  hasPassword: boolean; // false em conta criada só pelo Google
 };
 
 export const DEMO_EMAIL = "demo@tributoleao.app";
@@ -47,6 +48,9 @@ export const useRegister = () =>
   useSessionMutation((input: RegisterInput) => api("/auth/register", { method: "POST", body: input }));
 
 export const useDemoLogin = () => useSessionMutation(() => api("/auth/demo", { method: "POST" }));
+
+export const useSetPassword = () =>
+  useSessionMutation((input: SetPasswordInput) => api("/auth/password", { method: "PUT", body: input }));
 
 export function useLogout() {
   const queryClient = useQueryClient();
