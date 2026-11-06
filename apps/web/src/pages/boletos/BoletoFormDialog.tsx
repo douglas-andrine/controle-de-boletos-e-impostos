@@ -97,7 +97,7 @@ export function BoletoFormDialog({ open, boleto, defaultSupplierId, onClose }: P
 
           {/* "Nota fiscal" e não "Número": evita o Chrome tratar o campo como cartão */}
           <Field
-            label="Nota fiscal *"
+            label="Nota fiscal"
             placeholder="Ex.: 123456"
             autoComplete="off"
             error={errors.invoiceNumber?.message}

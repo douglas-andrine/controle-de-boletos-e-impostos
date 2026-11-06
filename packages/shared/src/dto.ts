@@ -66,7 +66,7 @@ export type TaxDTO = {
 export type BoletoDTO = {
   id: string;
   supplier: SupplierRefDTO;
-  invoiceNumber: string | null; // nula só em boletos antigos
+  invoiceNumber: string | null; // opcional
   description: string | null; // campo antigo, não está mais no cadastro
   amountCents: number;
   feesCents: number;

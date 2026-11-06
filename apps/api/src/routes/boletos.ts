@@ -17,7 +17,7 @@ const withSupplier = { supplier: { select: { id: true, legalName: true, tradeNam
 function toBoletoData(input: BoletoInput) {
   return {
     supplierId: input.supplierId,
-    invoiceNumber: input.invoiceNumber,
+    invoiceNumber: input.invoiceNumber ?? null, // sempre vem do formulário: em branco apaga
     amountCents: input.amountCents,
     dueDate: dateFromISO(input.dueDate),
     ...(input.description !== undefined && { description: input.description }),

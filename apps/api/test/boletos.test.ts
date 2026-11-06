@@ -65,10 +65,23 @@ describe("Boletos", () => {
     });
   });
 
-  it("exige o número da nota", async () => {
-    const res = await createBoleto({ invoiceNumber: "  " });
-    expect(res.statusCode).toBe(400);
-    expect(res.json().issues.invoiceNumber).toEqual(["Informe o número da nota"]);
+  it("cadastra sem nota fiscal (campo opcional)", async () => {
+    const payload = { supplierId, invoiceNumber: "  ", dueDate: isoDay(5), amountCents: 50000 };
+    const res = await app.inject({ method: "POST", url: "/boletos", cookies, payload });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().invoiceNumber).toBeNull();
+
+    const { invoiceNumber: _, ...withoutField } = payload;
+    const res2 = await app.inject({ method: "POST", url: "/boletos", cookies, payload: withoutField });
+    expect(res2.statusCode).toBe(201);
+    expect(res2.json().invoiceNumber).toBeNull();
+  });
+
+  it("PUT com a nota em branco apaga a nota", async () => {
+    const { id } = (await createBoleto()).json();
+    const put = await app.inject({ method: "PUT", url: `/boletos/${id}`, cookies, payload: { ...baseBoleto(), invoiceNumber: "" } });
+    expect(put.statusCode).toBe(200);
+    expect(put.json().invoiceNumber).toBeNull();
   });
 
   it("PUT sem os campos antigos mantém descrição, juros, emissão e linha digitável", async () => {

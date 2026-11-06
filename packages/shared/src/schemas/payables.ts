@@ -24,12 +24,12 @@ export const taxInputSchema = z.object({
 });
 export type TaxInput = z.infer<typeof taxInputSchema>;
 
-// O cadastro pede fornecedor, nota, vencimento e valor. Descrição, juros, emissão
+// O cadastro pede fornecedor, vencimento, valor e a nota (opcional). Descrição, juros, emissão
 // e linha digitável seguem aceitos pela API (registros antigos) e só mudam quando enviados.
 export const boletoInputSchema = z
   .object({
     supplierId: z.string().min(1, "Selecione o fornecedor"),
-    invoiceNumber: z.string().trim().min(1, "Informe o número da nota"),
+    invoiceNumber: optionalCode, // número da nota fiscal
     amountCents: cents.positive("O valor deve ser maior que zero"),
     dueDate: isoDateSchema,
     description: optionalCode,
