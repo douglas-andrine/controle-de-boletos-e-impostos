@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { boletoInputSchema, supplierName, type BoletoDTO } from "@tributoleao/shared";
+import { boletoInputSchema, supplierName, todayISO, type BoletoDTO } from "@tributoleao/shared";
 import { applyServerErrors } from "../../lib/forms";
 import { useSaveBoleto } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
@@ -14,16 +14,49 @@ import { SelectField } from "../../components/ui/SelectField";
 import { Button } from "../../components/ui/Button";
 import { Alert } from "../../components/ui/Alert";
 import { useToast } from "../../components/ui/Toast";
+import { DeliverySelect } from "../../components/delivery";
 
 type FormInput = z.input<typeof boletoInputSchema>;
 type FormOutput = z.output<typeof boletoInputSchema>;
 
-// Só fornecedor, nota, vencimento e valor: descrição, juros, emissão e linha
-// digitável de boletos antigos não são enviados, e a API os preserva.
-const emptyForm = (supplierId = ""): FormInput => ({ supplierId, invoiceNumber: "", dueDate: "", amountCents: 0 });
+// Descrição, juros, emissão e linha digitável de boletos antigos não são
+// enviados, e a API os preserva.
+const emptyForm = (supplierId = ""): FormInput => ({
+  supplierId,
+  invoiceNumber: "",
+  dueDate: "",
+  amountCents: 0,
+  goodsDelivered: null,
+  paidAt: null,
+});
 
 function toFormValues(b: BoletoDTO): FormInput {
-  return { supplierId: b.supplier.id, invoiceNumber: b.invoiceNumber ?? "", dueDate: b.dueDate, amountCents: b.amountCents };
+  return {
+    supplierId: b.supplier.id,
+    invoiceNumber: b.invoiceNumber ?? "",
+    dueDate: b.dueDate,
+    amountCents: b.amountCents,
+    goodsDelivered: b.goodsDelivered,
+    paidAt: b.paidAt,
+  };
+}
+
+type PaidAtFieldProps = { value: string | null | undefined; onChange: (value: string | null) => void; error?: string };
+
+/** "Já foi pago?" e, quando sim, a data do pagamento; `null` = não pago. */
+function PaidAtField({ value, onChange, error }: PaidAtFieldProps) {
+  const paid = typeof value === "string";
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <SelectField label="Já foi pago?" value={paid ? "sim" : "nao"} onChange={(e) => onChange(e.target.value === "sim" ? todayISO() : null)}>
+        <option value="nao">Não</option>
+        <option value="sim">Sim</option>
+      </SelectField>
+      {paid && (
+        <Field label="Data do pagamento *" type="date" max={todayISO()} value={value} onChange={(e) => onChange(e.target.value)} error={error} />
+      )}
+    </div>
+  );
 }
 
 type Props = {
@@ -114,6 +147,18 @@ export function BoletoFormDialog({ open, boleto, defaultSupplierId, onClose }: P
               )}
             />
           </div>
+
+          <Controller
+            control={control}
+            name="paidAt"
+            render={({ field }) => <PaidAtField value={field.value} onChange={field.onChange} error={errors.paidAt?.message} />}
+          />
+
+          <Controller
+            control={control}
+            name="goodsDelivered"
+            render={({ field }) => <DeliverySelect name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} />}
+          />
 
           <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={onClose}>

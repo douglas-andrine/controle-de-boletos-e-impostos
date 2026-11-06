@@ -3,21 +3,17 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Landmark,
   Loader2,
-  PackageCheck,
   PackageX,
   Plus,
   Search,
-  TriangleAlert,
-  Truck,
   X,
 } from "lucide-react";
-import { DELIVERY_DEADLINE_DAYS, EFFECTIVE_STATUSES, formatBRL, todayISO, type TaxDTO, type TaxListSummary } from "@tributoleao/shared";
+import { EFFECTIVE_STATUSES, formatBRL, todayISO, type TaxDTO, type TaxListSummary } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
 import { taxCompanyName, useDeleteTax, useSetTaxDelivery, useSetTaxPayment, useTaxes } from "../../lib/taxes";
-import { daysUntil, formatDate, formatMonthShort, shiftMonth } from "../../lib/format";
+import { formatDate, formatMonthShort, shiftMonth } from "../../lib/format";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useListFilters } from "../../lib/useListFilters";
 import { Button } from "../../components/ui/Button";
@@ -28,81 +24,14 @@ import { useToast } from "../../components/ui/Toast";
 import { StatusBadge } from "../../components/StatusBadge";
 import { DueCell, PayableActions, StatusTabs } from "../../components/payables";
 import { PayDialog } from "../../components/PayDialog";
+import { DELIVERY_FILTERS, DeliveryCell, NotDeliveredButton, parseDeliveryFilter } from "../../components/delivery";
 import { TaxFormDialog } from "./TaxFormDialog";
 
 const errorMessage = (err: unknown) => (err instanceof ApiError ? err.message : "Algo deu errado. Tente novamente.");
 
-// Entrega da mercadoria na URL: ?entrega=sim|nao|atrasada
-const DELIVERY_FILTERS = [
-  { value: "sim", label: "Mercadoria entregue" },
-  { value: "nao", label: "Não entregue" },
-  { value: "atrasada", label: `Entrega atrasada (+${DELIVERY_DEADLINE_DAYS} dias)` },
-] as const;
-
-const URGENT_DELIVERY_DAYS = 3; // a partir daqui o prazo de entrega fica em destaque
-
 const pill = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
-/** "Faltam 3 dias", "Vence hoje"… para o prazo de entrega. */
-function formatDeliveryCountdown(days: number) {
-  if (days === 0) return "Vence hoje";
-  return days === 1 ? "Falta 1 dia" : `Faltam ${days} dias`;
-}
-
-/** Situação da entrega da mercadoria, com o prazo contado a partir do pagamento. */
-function DeliveryCell({ tax }: { tax: TaxDTO }) {
-  const { deliveryStatus, deliveryDeadline } = tax;
-  if (deliveryStatus === null) return <span className="text-slate-400">—</span>;
-
-  if (deliveryStatus === "ENTREGUE") {
-    return (
-      <span className={`${pill} bg-emerald-brand/10 text-emerald-brand`}>
-        <PackageCheck className="size-3.5" aria-hidden />
-        Entregue
-      </span>
-    );
-  }
-
-  // Ainda não pago: o prazo só começa a contar na baixa
-  if (!deliveryDeadline) {
-    return (
-      <div>
-        <span className={`${pill} bg-slate-100 text-slate-700`}>
-          <PackageX className="size-3.5" aria-hidden />
-          Não entregue
-        </span>
-        <p className="mt-0.5 text-xs text-slate-500">prazo conta após o pagamento</p>
-      </div>
-    );
-  }
-
-  const days = daysUntil(deliveryDeadline);
-  if (deliveryStatus === "ATRASADA") {
-    return (
-      <div title={`Prazo era ${formatDate(deliveryDeadline)}`}>
-        <span className={`${pill} bg-danger/10 text-danger`}>
-          <TriangleAlert className="size-3.5" aria-hidden />
-          Atrasada
-        </span>
-        <p className="mt-0.5 text-xs font-medium text-danger">{-days === 1 ? "há 1 dia" : `há ${-days} dias`}</p>
-      </div>
-    );
-  }
-
-  const urgent = days <= URGENT_DELIVERY_DAYS;
-  const Icon = urgent ? Clock : Truck;
-  return (
-    <div title={`Entregar até ${formatDate(deliveryDeadline)}`}>
-      <span className={`${pill} ${urgent ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>
-        <Icon className="size-3.5" aria-hidden />
-        {formatDeliveryCountdown(days)}
-      </span>
-      <p className="mt-0.5 text-xs text-slate-500 tabular-nums">até {formatDate(deliveryDeadline).slice(0, 5)}</p>
-    </div>
-  );
-}
 
 /** Empresa em destaque e nota fiscal abaixo; "—" quando o imposto não tem nenhuma das duas. */
 function CompanyCell({ tax }: { tax: TaxDTO }) {
@@ -190,10 +119,7 @@ export function TaxesPage() {
   const statusParam = searchParams.get("status");
   const status = EFFECTIVE_STATUSES.find((s) => s === statusParam);
   const referenceMonth = searchParams.get("mes") || undefined;
-  const deliveryParam = searchParams.get("entrega");
-  const delivery = DELIVERY_FILTERS.find((f) => f.value === deliveryParam);
-  const goodsDelivered = delivery?.value === "sim" ? true : delivery?.value === "nao" ? false : undefined;
-  const deliveryLate = delivery?.value === "atrasada";
+  const { delivery, goodsDelivered, deliveryLate } = parseDeliveryFilter(searchParams.get("entrega"));
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const search = useDebouncedValue(searchInput.trim());
 
@@ -298,19 +224,7 @@ export function TaxesPage() {
         setDeleting(tax);
       }}
       paidAction={
-        tax.goodsDelivered === false && (
-          <button
-            type="button"
-            onClick={() => markDelivery(tax, true)}
-            // Mostra a situação atual (não entregue); o clique registra a entrega
-            className="inline-flex items-center gap-1.5 rounded-lg border border-danger/40 bg-danger/5 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-danger hover:bg-danger/10"
-            aria-label={`Mercadoria de ${tax.name} não entregue: marcar como entregue`}
-            title="Clique para marcar como entregue"
-          >
-            <PackageX className="size-4" aria-hidden />
-            Não entregue
-          </button>
-        )
+        tax.goodsDelivered === false && <NotDeliveredButton label={tax.name} onClick={() => markDelivery(tax, true)} />
       }
       menuItems={tax.goodsDelivered ? [{ label: "Desmarcar entrega", Icon: PackageX, onSelect: () => markDelivery(tax, false) }] : []}
     />
@@ -381,7 +295,7 @@ export function TaxesPage() {
             {referenceMonth && <FilterChip label={`Apuração ${formatMonthShort(referenceMonth)}`} onRemove={() => setFilter("mes", undefined)} />}
             {delivery && (
               <FilterChip
-                label={`Entrega: ${delivery.value === "sim" ? "entregue" : delivery.value === "nao" ? "não entregue" : "atrasada"}`}
+                label={`Entrega: ${delivery.chip}`}
                 onRemove={() => setFilter("entrega", undefined)}
                 danger={deliveryLate}
               />
@@ -456,7 +370,7 @@ export function TaxesPage() {
                       <StatusBadge status={tax.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <DeliveryCell tax={tax} />
+                      <DeliveryCell item={tax} />
                     </td>
                     <td className="px-4 py-3">{rowActions(tax)}</td>
                   </tr>
@@ -481,7 +395,7 @@ export function TaxesPage() {
                   <DueCell dueDate={tax.dueDate} status={tax.status} paidAt={tax.paidAt} />
                   <div className="flex flex-col items-end gap-1.5">
                     <StatusBadge status={tax.status} />
-                    {tax.deliveryStatus && <DeliveryCell tax={tax} />}
+                    {tax.deliveryStatus && <DeliveryCell item={tax} />}
                   </div>
                 </div>
                 <div className="mt-3 border-t border-slate-100 pt-3">{rowActions(tax)}</div>
