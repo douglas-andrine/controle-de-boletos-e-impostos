@@ -10,8 +10,7 @@ export type BoletoFilters = {
   supplierId?: string;
   dueMonth?: string; // AAAA-MM: vira o intervalo dueFrom/dueTo do mês
   dueDay?: number; // dia do mês em dueMonth: o intervalo vira só esse dia
-  goodsDelivered?: boolean;
-  deliveryLate?: boolean;
+  boletoReceived?: boolean;
   search?: string;
 };
 
@@ -31,7 +30,7 @@ function dueRange(month: string, day?: number) {
 const invalidate = (queryClient: QueryClient) =>
   Promise.all(["boletos", "dashboard", "suppliers"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 
-export function useBoletos({ page, status, supplierId, dueMonth, dueDay, goodsDelivered, deliveryLate, search }: BoletoFilters) {
+export function useBoletos({ page, status, supplierId, dueMonth, dueDay, boletoReceived, search }: BoletoFilters) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(BOLETOS_PAGE_SIZE) });
   if (status) params.set("status", status);
   if (supplierId) params.set("supplierId", supplierId);
@@ -40,12 +39,11 @@ export function useBoletos({ page, status, supplierId, dueMonth, dueDay, goodsDe
     params.set("dueFrom", dueFrom);
     params.set("dueTo", dueTo);
   }
-  if (goodsDelivered !== undefined) params.set("goodsDelivered", String(goodsDelivered));
-  if (deliveryLate) params.set("deliveryLate", "true");
+  if (boletoReceived !== undefined) params.set("boletoReceived", String(boletoReceived));
   if (search) params.set("search", search);
 
   return useQuery({
-    queryKey: ["boletos", { page, status, supplierId, dueMonth, dueDay, goodsDelivered, deliveryLate, search }],
+    queryKey: ["boletos", { page, status, supplierId, dueMonth, dueDay, boletoReceived, search }],
     queryFn: () => api<Paginated<BoletoDTO>>(`/boletos?${params}`),
     placeholderData: keepPreviousData,
   });
@@ -82,11 +80,11 @@ export function useSetBoletoPayment() {
   });
 }
 
-export function useSetBoletoDelivery() {
+export function useSetBoletoReceived() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, delivered }: { id: string; delivered: boolean }) =>
-      api<BoletoDTO>(`/boletos/${id}/delivery`, { method: "PATCH", body: { delivered } }),
+    mutationFn: ({ id, received }: { id: string; received: boolean }) =>
+      api<BoletoDTO>(`/boletos/${id}/received`, { method: "PATCH", body: { received } }),
     onSuccess: () => invalidate(queryClient),
   });
 }

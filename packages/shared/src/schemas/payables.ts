@@ -25,7 +25,7 @@ export const taxInputSchema = z.object({
 });
 export type TaxInput = z.infer<typeof taxInputSchema>;
 
-// O cadastro pede fornecedor, vencimento, valor, a nota (opcional), a entrega e se já foi pago. Descrição, juros, emissão
+// O cadastro pede fornecedor, vencimento, valor, a nota (opcional), se o boleto veio com a nota e se já foi pago. Descrição, juros, emissão
 // e linha digitável seguem aceitos pela API (registros antigos) e só mudam quando enviados.
 export const boletoInputSchema = z
   .object({
@@ -37,7 +37,7 @@ export const boletoInputSchema = z
     feesCents: cents.nonnegative("Juros/multa não podem ser negativos").optional(),
     issueDate: isoDateSchema.optional(),
     barcode: optionalCode,
-    goodsDelivered: z.boolean().nullable().default(null), // null = não se aplica
+    boletoReceived: z.boolean().default(true), // false = buscar no portal do fornecedor
     // Data do pagamento informada no cadastro; null = não pago. Ausente, a edição não mexe no pagamento.
     paidAt: isoDateSchema.nullable().optional(),
   })
@@ -57,3 +57,6 @@ export type PayInput = z.infer<typeof payInputSchema>;
 
 export const deliveryInputSchema = z.object({ delivered: z.boolean() });
 export type DeliveryInput = z.infer<typeof deliveryInputSchema>;
+
+export const boletoReceivedInputSchema = z.object({ received: z.boolean() });
+export type BoletoReceivedInput = z.infer<typeof boletoReceivedInputSchema>;

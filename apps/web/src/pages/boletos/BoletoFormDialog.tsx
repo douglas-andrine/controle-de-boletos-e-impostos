@@ -14,7 +14,7 @@ import { SelectField } from "../../components/ui/SelectField";
 import { Button } from "../../components/ui/Button";
 import { Alert } from "../../components/ui/Alert";
 import { useToast } from "../../components/ui/Toast";
-import { DeliverySelect } from "../../components/delivery";
+import { ReceivedSelect } from "./received";
 
 type FormInput = z.input<typeof boletoInputSchema>;
 type FormOutput = z.output<typeof boletoInputSchema>;
@@ -26,7 +26,7 @@ const emptyForm = (supplierId = ""): FormInput => ({
   invoiceNumber: "",
   dueDate: "",
   amountCents: 0,
-  goodsDelivered: null,
+  boletoReceived: true,
   paidAt: null,
 });
 
@@ -36,7 +36,7 @@ function toFormValues(b: BoletoDTO): FormInput {
     invoiceNumber: b.invoiceNumber ?? "",
     dueDate: b.dueDate,
     amountCents: b.amountCents,
-    goodsDelivered: b.goodsDelivered,
+    boletoReceived: b.boletoReceived,
     paidAt: b.paidAt,
   };
 }
@@ -156,8 +156,8 @@ export function BoletoFormDialog({ open, boleto, defaultSupplierId, onClose }: P
 
           <Controller
             control={control}
-            name="goodsDelivered"
-            render={({ field }) => <DeliverySelect name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} />}
+            name="boletoReceived"
+            render={({ field }) => <ReceivedSelect name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} />}
           />
 
           <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">

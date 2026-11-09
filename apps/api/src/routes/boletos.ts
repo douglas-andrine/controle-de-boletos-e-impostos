@@ -1,12 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { boletoInputSchema, boletoListQuerySchema, deliveryInputSchema, payInputSchema, todayISO, type BoletoInput } from "@tributoleao/shared";
+import { boletoInputSchema, boletoListQuerySchema, boletoReceivedInputSchema, payInputSchema, todayISO, type BoletoInput } from "@tributoleao/shared";
 import { prisma } from "../lib/prisma";
 import { conflict, notFound } from "../lib/errors";
 import { dateFromISO } from "../lib/dates";
 import { pageArgs, pageMeta } from "../lib/pagination";
-import { assertSupplierOwned, lateDeliveryWhere, payableConditions } from "../lib/payables";
+import { assertSupplierOwned, payableConditions } from "../lib/payables";
 import { serializeBoleto } from "../lib/serializers";
 
 const idParams = z.object({ id: z.string().min(1) });
@@ -24,7 +24,7 @@ function toBoletoData(input: BoletoInput) {
     ...(input.feesCents !== undefined && { feesCents: input.feesCents }),
     ...(input.issueDate !== undefined && { issueDate: dateFromISO(input.issueDate) }),
     ...(input.barcode !== undefined && { barcode: input.barcode }),
-    goodsDelivered: input.goodsDelivered,
+    boletoReceived: input.boletoReceived,
     ...(input.paidAt !== undefined &&
       (input.paidAt
         ? { status: "PAGO" as const, paidAt: dateFromISO(input.paidAt) }
@@ -42,13 +42,13 @@ export async function boletoRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.authenticate);
 
   app.get("/boletos", async (request) => {
-    const { page, pageSize, search, supplierId, goodsDelivered, deliveryLate, ...filters } = boletoListQuerySchema.parse(request.query);
+    const { page, pageSize, search, supplierId, boletoReceived, ...filters } = boletoListQuerySchema.parse(request.query);
 
     const where: Prisma.BoletoWhereInput = {
       userId: request.user.sub,
-      AND: [...payableConditions(filters), ...(deliveryLate ? [lateDeliveryWhere()] : [])],
+      AND: payableConditions(filters),
       ...(supplierId && { supplierId }),
-      ...(goodsDelivered !== undefined && { goodsDelivered }),
+      ...(boletoReceived !== undefined && { boletoReceived }),
       ...(search && {
         OR: [
           { invoiceNumber: { contains: search, mode: "insensitive" } },
@@ -117,14 +117,13 @@ export async function boletoRoutes(app: FastifyInstance) {
     return serializeBoleto(updated);
   });
 
-  // Marca (ou desmarca) a entrega da mercadoria sem passar pelo formulário
-  app.patch("/boletos/:id/delivery", async (request) => {
+  // Marca (ou desmarca) que o boleto está em mãos sem passar pelo formulário
+  app.patch("/boletos/:id/received", async (request) => {
     const { id } = idParams.parse(request.params);
-    const { delivered } = deliveryInputSchema.parse(request.body);
-    const boleto = await findOwnedBoleto(request.user.sub, id);
-    if (boleto.goodsDelivered === null) throw conflict("Este boleto não tem entrega de mercadoria");
+    const { received } = boletoReceivedInputSchema.parse(request.body);
+    await findOwnedBoleto(request.user.sub, id);
 
-    return serializeBoleto(await prisma.boleto.update({ where: { id }, data: { goodsDelivered: delivered }, include: withSupplier }));
+    return serializeBoleto(await prisma.boleto.update({ where: { id }, data: { boletoReceived: received }, include: withSupplier }));
   });
 
   // Estorno da baixa, para corrigir pagamentos marcados por engano

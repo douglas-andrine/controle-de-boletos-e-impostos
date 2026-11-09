@@ -47,7 +47,10 @@ export type TaxListQuery = z.infer<typeof taxListQuerySchema>;
 
 export const boletoListQuerySchema = paginationSchema.extend({
   ...payableFilters,
-  ...deliveryFilters,
+  boletoReceived: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === "true")),
   supplierId: z.string().min(1).optional(),
 });
 export type BoletoListQuery = z.infer<typeof boletoListQuerySchema>;

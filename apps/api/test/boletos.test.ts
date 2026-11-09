@@ -209,40 +209,27 @@ describe("Boletos: pagamento no cadastro e entrega da mercadoria", () => {
     expect((await put({ paidAt: null })).json()).toMatchObject({ status: "PENDENTE", paidAt: null });
   });
 
-  it("registra a entrega e conta o prazo de 15 dias a partir do pagamento", async () => {
-    expect((await post()).json()).toMatchObject({ goodsDelivered: null, deliveryStatus: null, deliveryDeadline: null });
-    expect((await post({ goodsDelivered: true })).json()).toMatchObject({ goodsDelivered: true, deliveryStatus: "ENTREGUE" });
-    expect((await post({ goodsDelivered: false })).json()).toMatchObject({ deliveryStatus: "AGUARDANDO", deliveryDeadline: null });
-    expect((await post({ goodsDelivered: false, paidAt: isoDay(-15) })).json()).toMatchObject({
-      deliveryStatus: "AGUARDANDO",
-      deliveryDeadline: isoDay(0),
-    });
-    expect((await post({ goodsDelivered: false, paidAt: isoDay(-16) })).json()).toMatchObject({ deliveryStatus: "ATRASADA" });
+  it("o boleto vem como recebido com a nota, a menos que se diga o contrário", async () => {
+    expect((await post()).json()).toMatchObject({ boletoReceived: true });
+    expect((await post({ boletoReceived: false })).json()).toMatchObject({ boletoReceived: false });
   });
 
-  it("filtra pela entrega e pela entrega atrasada", async () => {
-    await post({ invoiceNumber: "ENTREGUE", goodsDelivered: true });
-    await post({ invoiceNumber: "AGUARDA", goodsDelivered: false });
-    await post({ invoiceNumber: "ATRASADO", goodsDelivered: false, paidAt: isoDay(-20) });
-    await post({ invoiceNumber: "SEM-ENTREGA" });
+  it("filtra pelo recebimento do boleto", async () => {
+    await post({ invoiceNumber: "RECEBIDO" });
+    await post({ invoiceNumber: "PORTAL", boletoReceived: false });
 
-    const notas = (body: { data: { invoiceNumber: string }[] }) => body.data.map((b) => b.invoiceNumber).sort();
-    expect(notas(await list("goodsDelivered=true"))).toEqual(["ENTREGUE"]);
-    expect(notas(await list("goodsDelivered=false"))).toEqual(["AGUARDA", "ATRASADO"]);
-    expect(notas(await list("deliveryLate=true"))).toEqual(["ATRASADO"]);
-    expect((await list("")).meta.total).toBe(4);
+    const notas = (body: { data: { invoiceNumber: string }[] }) => body.data.map((b) => b.invoiceNumber);
+    expect(notas(await list("boletoReceived=true"))).toEqual(["RECEBIDO"]);
+    expect(notas(await list("boletoReceived=false"))).toEqual(["PORTAL"]);
+    expect((await list("")).meta.total).toBe(2);
   });
 
-  it("marca e desmarca a entrega pela rota própria", async () => {
-    const { id } = (await post({ goodsDelivered: false })).json();
-    const mark = await app.inject({ method: "PATCH", url: `/boletos/${id}/delivery`, cookies, payload: { delivered: true } });
-    expect(mark.json()).toMatchObject({ goodsDelivered: true, deliveryStatus: "ENTREGUE" });
+  it("marca e desmarca o recebimento pela rota própria", async () => {
+    const { id } = (await post({ boletoReceived: false })).json();
+    const mark = await app.inject({ method: "PATCH", url: `/boletos/${id}/received`, cookies, payload: { received: true } });
+    expect(mark.json()).toMatchObject({ boletoReceived: true });
 
-    const unmark = await app.inject({ method: "PATCH", url: `/boletos/${id}/delivery`, cookies, payload: { delivered: false } });
-    expect(unmark.json()).toMatchObject({ goodsDelivered: false, deliveryStatus: "AGUARDANDO" });
-
-    const noDelivery = (await post()).json();
-    const res = await app.inject({ method: "PATCH", url: `/boletos/${noDelivery.id}/delivery`, cookies, payload: { delivered: true } });
-    expect(res.statusCode).toBe(409);
+    const unmark = await app.inject({ method: "PATCH", url: `/boletos/${id}/received`, cookies, payload: { received: false } });
+    expect(unmark.json()).toMatchObject({ boletoReceived: false });
   });
 });

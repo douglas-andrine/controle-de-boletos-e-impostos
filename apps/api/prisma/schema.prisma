@@ -108,7 +108,7 @@ model Boleto {
   status         PaymentStatus @default(PENDENTE)
   paidAt         DateTime?
   receiptPath    String?
-  goodsDelivered Boolean? // mercadoria entregue; null = não se aplica
+  boletoReceived Boolean       @default(true) // o fornecedor mandou o boleto com a nota; false = buscar no portal
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 

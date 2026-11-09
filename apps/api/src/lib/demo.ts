@@ -48,7 +48,7 @@ export async function seedDemoUser(prisma: PrismaClient) {
       { supplierId: internet.id, invoiceNumber: "102244", amountCents: 19990, dueDate: day(-2) },
       { supplierId: aluguel.id, invoiceNumber: "000327", amountCents: 350000, dueDate: day(2) },
       { supplierId: contabil.id, invoiceNumber: "2026/0145", amountCents: 120000, dueDate: day(5) },
-      { supplierId: papelaria.id, invoiceNumber: "009871", amountCents: 31550, dueDate: day(12) },
+      { supplierId: papelaria.id, invoiceNumber: "009871", amountCents: 31550, dueDate: day(12), boletoReceived: false },
       { supplierId: energia.id, invoiceNumber: "781190", amountCents: 51230, dueDate: day(-35), status: PaymentStatus.PAGO, paidAt: day(-36) },
     ].map((b) => ({ ...b, userId: user.id })),
   });
