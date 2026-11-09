@@ -9,19 +9,24 @@ export function useListFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
-  function setFilter(key: string, value: string | undefined) {
+  /** Muda vários filtros de uma vez (um único passo no histórico). */
+  function setFilters(updates: Record<string, string | undefined>) {
     setSearchParams(
       () => {
         const params = currentParams();
-        if (value) params.set(key, value);
-        else params.delete(key);
+        for (const [key, value] of Object.entries(updates)) {
+          if (value) params.set(key, value);
+          else params.delete(key);
+        }
         params.delete("page");
         return params;
       },
       // Digitação na busca não deve encher o histórico do navegador
-      { replace: key === "q" },
+      { replace: "q" in updates },
     );
   }
+
+  const setFilter = (key: string, value: string | undefined) => setFilters({ [key]: value });
 
   function goToPage(next: number) {
     setSearchParams(() => {
@@ -34,5 +39,5 @@ export function useListFilters() {
 
   const clearFilters = () => setSearchParams({});
 
-  return { searchParams, page, setFilter, goToPage, clearFilters };
+  return { searchParams, page, setFilter, setFilters, goToPage, clearFilters };
 }

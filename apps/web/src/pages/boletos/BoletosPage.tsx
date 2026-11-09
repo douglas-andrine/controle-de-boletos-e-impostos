@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2, PackageX, Plus, Receipt, Search, X } from "lucide-react";
-import { EFFECTIVE_STATUSES, formatBRL, supplierName, type BoletoDTO } from "@tributoleao/shared";
+import { ChevronLeft, ChevronRight, Loader2, PackageX, Plus, Receipt, Search, X } from "lucide-react";
+import { EFFECTIVE_STATUSES, formatBRL, supplierName, todayISO, type BoletoDTO } from "@tributoleao/shared";
 import { ApiError } from "../../lib/api";
-import { useBoletos, useDeleteBoleto, useSetBoletoDelivery, useSetBoletoPayment } from "../../lib/boletos";
+import { daysInMonth, useBoletos, useDeleteBoleto, useSetBoletoDelivery, useSetBoletoPayment } from "../../lib/boletos";
 import { useSupplierOptions } from "../../lib/suppliers";
 import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useListFilters } from "../../lib/useListFilters";
@@ -45,12 +45,17 @@ const filterInput =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-2 focus:outline-navy/30";
 
 export function BoletosPage() {
-  // Filtros na URL: ?status=PENDENTE&fornecedor=<id>&venc=2026-10&entrega=nao&q=energia&page=2
-  const { searchParams, page, setFilter, goToPage, clearFilters } = useListFilters();
+  // Filtros na URL: ?status=PENDENTE&fornecedor=<id>&venc=2026-10&dia=5&entrega=nao&q=energia&page=2
+  const { searchParams, page, setFilter, setFilters, goToPage, clearFilters } = useListFilters();
   const statusParam = searchParams.get("status");
   const status = EFFECTIVE_STATUSES.find((s) => s === statusParam);
   const supplierId = searchParams.get("fornecedor") || undefined;
   const dueMonth = searchParams.get("venc") || undefined;
+  // O dia só vale dentro de um mês; sem mês escolhido, os dias listados são os do mês atual
+  const dayMonth = dueMonth ?? todayISO().slice(0, 7);
+  const monthDays = daysInMonth(dayMonth);
+  const dayParam = Number(searchParams.get("dia"));
+  const dueDay = dueMonth && Number.isInteger(dayParam) && dayParam >= 1 && dayParam <= monthDays ? dayParam : undefined;
   const { delivery, goodsDelivered, deliveryLate } = parseDeliveryFilter(searchParams.get("entrega"));
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const search = useDebouncedValue(searchInput.trim());
@@ -60,7 +65,7 @@ export function BoletosPage() {
   const [paying, setPaying] = useState<BoletoDTO | null>(null);
   const [deleting, setDeleting] = useState<BoletoDTO | null>(null);
 
-  const { data, isPending, isError, isFetching, refetch } = useBoletos({ page, status, supplierId, dueMonth, goodsDelivered, deliveryLate, search });
+  const { data, isPending, isError, isFetching, refetch } = useBoletos({ page, status, supplierId, dueMonth, dueDay, goodsDelivered, deliveryLate, search });
   const suppliers = useSupplierOptions();
   const setPayment = useSetBoletoPayment();
   const setDelivery = useSetBoletoDelivery();
@@ -76,6 +81,12 @@ export function BoletosPage() {
   useEffect(() => {
     if (data && data.data.length === 0 && page > 1) goToPage(data.meta.totalPages);
   });
+
+  // Trocar de mês mantém o dia se ele existir no novo mês (dia 31 não existe em fevereiro)
+  const changeMonth = (month: string | undefined) =>
+    setFilters({ venc: month, dia: month && dueDay && dueDay <= daysInMonth(month) ? String(dueDay) : undefined });
+
+  const changeDay = (day: number | undefined) => setFilters({ venc: dayMonth, dia: day ? String(day) : undefined });
 
   const openForm = (boleto: BoletoDTO | null) => {
     setEditing(boleto);
@@ -190,7 +201,7 @@ export function BoletosPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <select
             value={supplierId ?? ""}
             onChange={(e) => setFilter("fornecedor", e.target.value || undefined)}
@@ -213,9 +224,43 @@ export function BoletosPage() {
               id="filter-due-month"
               type="month"
               value={dueMonth ?? ""}
-              onChange={(e) => setFilter("venc", e.target.value || undefined)}
+              onChange={(e) => changeMonth(e.target.value || undefined)}
               className={filterInput}
             />
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => dueDay && changeDay(dueDay - 1)}
+              disabled={!dueDay || dueDay <= 1}
+              aria-label="Dia anterior"
+              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-40"
+            >
+              <ChevronLeft className="size-4" aria-hidden />
+            </button>
+            <select
+              value={dueDay ?? ""}
+              onChange={(e) => changeDay(Number(e.target.value) || undefined)}
+              aria-label="Filtrar por dia do vencimento"
+              className={`${filterInput} sm:w-36`}
+            >
+              <option value="">Todos os dias</option>
+              {Array.from({ length: monthDays }, (_, i) => i + 1).map((d) => (
+                <option key={d} value={d}>
+                  Dia {d}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => dueDay && changeDay(dueDay + 1)}
+              disabled={!dueDay || dueDay >= monthDays}
+              aria-label="Próximo dia"
+              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-40"
+            >
+              <ChevronRight className="size-4" aria-hidden />
+            </button>
           </div>
 
           <select

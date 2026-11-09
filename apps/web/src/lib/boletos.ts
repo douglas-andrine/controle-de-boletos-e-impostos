@@ -9,27 +9,34 @@ export type BoletoFilters = {
   status?: EffectiveStatus;
   supplierId?: string;
   dueMonth?: string; // AAAA-MM: vira o intervalo dueFrom/dueTo do mês
+  dueDay?: number; // dia do mês em dueMonth: o intervalo vira só esse dia
   goodsDelivered?: boolean;
   deliveryLate?: boolean;
   search?: string;
 };
 
-function monthRange(month: string) {
+export function daysInMonth(month: string) {
   const [y, m] = month.split("-").map(Number) as [number, number];
-  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  return { dueFrom: `${month}-01`, dueTo: `${month}-${String(lastDay).padStart(2, "0")}` };
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+const dayOf = (month: string, day: number) => `${month}-${String(day).padStart(2, "0")}`;
+
+function dueRange(month: string, day?: number) {
+  if (day) return { dueFrom: dayOf(month, day), dueTo: dayOf(month, day) };
+  return { dueFrom: dayOf(month, 1), dueTo: dayOf(month, daysInMonth(month)) };
 }
 
 // Boletos afetam o dashboard e a contagem de boletos de cada fornecedor
 const invalidate = (queryClient: QueryClient) =>
   Promise.all(["boletos", "dashboard", "suppliers"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
 
-export function useBoletos({ page, status, supplierId, dueMonth, goodsDelivered, deliveryLate, search }: BoletoFilters) {
+export function useBoletos({ page, status, supplierId, dueMonth, dueDay, goodsDelivered, deliveryLate, search }: BoletoFilters) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(BOLETOS_PAGE_SIZE) });
   if (status) params.set("status", status);
   if (supplierId) params.set("supplierId", supplierId);
   if (dueMonth) {
-    const { dueFrom, dueTo } = monthRange(dueMonth);
+    const { dueFrom, dueTo } = dueRange(dueMonth, dueDay);
     params.set("dueFrom", dueFrom);
     params.set("dueTo", dueTo);
   }
@@ -38,7 +45,7 @@ export function useBoletos({ page, status, supplierId, dueMonth, goodsDelivered,
   if (search) params.set("search", search);
 
   return useQuery({
-    queryKey: ["boletos", { page, status, supplierId, dueMonth, goodsDelivered, deliveryLate, search }],
+    queryKey: ["boletos", { page, status, supplierId, dueMonth, dueDay, goodsDelivered, deliveryLate, search }],
     queryFn: () => api<Paginated<BoletoDTO>>(`/boletos?${params}`),
     placeholderData: keepPreviousData,
   });
