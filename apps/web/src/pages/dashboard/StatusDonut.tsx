@@ -43,7 +43,8 @@ export function StatusDonut({ stats }: { stats: DashboardStatsDTO }) {
       {total === 0 ? (
         <p className="py-10 text-center text-sm text-slate-500">Nenhum lançamento com vencimento neste mês.</p>
       ) : (
-        <div className="flex flex-col items-center gap-5 sm:flex-row lg:flex-col 2xl:flex-row">
+        // Lado a lado quando o cartão ocupa a largura toda (antes do xl); na coluna estreita, a legenda vai embaixo
+        <div className="flex flex-col items-center gap-5 sm:flex-row xl:flex-col">
           <div className="relative size-40 shrink-0">
             <svg viewBox="0 0 100 100" className="size-full -rotate-90" aria-hidden>
               <circle cx="50" cy="50" r={RADIUS} fill="none" strokeWidth="11" className="stroke-slate-100" />
@@ -83,7 +84,7 @@ export function StatusDonut({ stats }: { stats: DashboardStatsDTO }) {
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-navy"
               >
                 <s.Icon className={`size-4 shrink-0 ${s.text}`} aria-hidden />
-                <span className="flex-1 text-slate-700">{s.label}</span>
+                <span className="min-w-0 flex-1 truncate text-slate-700">{s.label}</span>
                 <span className="font-medium text-slate-800 tabular-nums">{formatBRL(s.cents)}</span>
                 <span className="w-12 text-right text-xs text-slate-500 tabular-nums">{formatPercent(Math.round(s.percent * 10) / 10)}</span>
               </li>

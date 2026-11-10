@@ -48,7 +48,8 @@ export function DashboardPage() {
         ) : isPending ? (
           <KpiCardsSkeleton />
         ) : (
-          <div className={`grid gap-3 transition-opacity lg:grid-cols-[1fr_16rem] ${isFetching ? "opacity-70" : ""}`}>
+          // minmax(0, 1fr): a coluna dos números encolhe em vez de empurrar o medidor para fora da faixa
+          <div className={`grid gap-3 transition-opacity lg:grid-cols-[minmax(0,1fr)_16rem] ${isFetching ? "opacity-70" : ""}`}>
             <KpiCards stats={stats} />
             <PaidGauge stats={stats} />
           </div>
@@ -74,8 +75,8 @@ export function DashboardPage() {
             </Alert>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
+          <div className="grid gap-6 xl:grid-cols-3">
+            <div className="xl:col-span-2">
               <MonthlyChart points={stats.yearByMonth} selected={month} onSelect={setMonth} />
             </div>
             <StatusDonut stats={stats} />

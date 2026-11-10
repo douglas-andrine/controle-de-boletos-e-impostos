@@ -8,7 +8,7 @@ type FlowCardProps = { label: string; Icon: typeof Wallet; value: ReactNode; det
 /** Cartão do fluxo do mês; o valor fica em tinta de texto, a cor só no ícone e na borda. */
 function FlowCard({ label, Icon, value, detail, accent }: FlowCardProps) {
   return (
-    <div className={`flex-1 rounded-xl bg-white p-4 text-slate-800 shadow-sm ${accent ? "ring-2 ring-emerald-brand" : ""}`}>
+    <div className={`min-w-0 flex-1 rounded-xl bg-white p-4 text-slate-800 shadow-sm ${accent ? "ring-2 ring-emerald-brand" : ""}`}>
       <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <Icon className={`size-4 ${accent ? "text-emerald-brand" : "text-navy"}`} aria-hidden />
         {label}
@@ -45,8 +45,9 @@ export function KpiCards({ stats }: { stats: DashboardStatsDTO }) {
   const { month, monthTotals, monthOverdue, taxesYearToDate, pendingBoletos, nextDue } = stats;
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[1fr_15rem]">
-      <div className="flex flex-col gap-3 md:flex-row md:items-stretch">
+    // Os indicadores menores só ficam ao lado do fluxo em telas bem largas; antes disso, numa linha abaixo
+    <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_15rem]">
+      <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-stretch">
         <FlowCard
           label={`Total de ${formatMonthName(month)}`}
           Icon={CalendarRange}
@@ -86,7 +87,7 @@ export function KpiCards({ stats }: { stats: DashboardStatsDTO }) {
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
         <MiniStat
           label="Boletos pendentes"
           Icon={Receipt}
