@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Paginated, SupplierDTO, SupplierInput } from "@tributoleao/shared";
+import type { Paginated, SupplierDTO, SupplierInput, SupplierRefDTO } from "@tributoleao/shared";
 import { api } from "./api";
 
 export const SUPPLIERS_PAGE_SIZE = 10;
@@ -15,12 +15,11 @@ export function useSuppliers({ page, search }: { page: number; search: string })
   });
 }
 
-/** Todos os fornecedores (até 100), para selects de filtro e formulário. */
+/** Todos os fornecedores, para selects de filtro e formulário. */
 export function useSupplierOptions() {
   return useQuery({
     queryKey: ["suppliers", "options"],
-    queryFn: () => api<Paginated<SupplierDTO>>("/suppliers?pageSize=100"),
-    select: (page) => page.data,
+    queryFn: () => api<SupplierRefDTO[]>("/suppliers/options"),
   });
 }
 

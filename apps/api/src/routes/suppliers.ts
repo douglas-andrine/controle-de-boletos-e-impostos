@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { onlyDigits, supplierInputSchema, supplierListQuerySchema, type SupplierInput } from "@tributoleao/shared";
+import { onlyDigits, supplierInputSchema, supplierListQuerySchema, type SupplierInput, type SupplierRefDTO } from "@tributoleao/shared";
 import { prisma } from "../lib/prisma";
 import { conflict, isUniqueViolation, notFound } from "../lib/errors";
 import { pageArgs, pageMeta } from "../lib/pagination";
@@ -53,6 +53,16 @@ export async function supplierRoutes(app: FastifyInstance) {
     ]);
 
     return { data: suppliers.map(serializeSupplier), meta: pageMeta(page, pageSize, total) };
+  });
+
+  // Todos os fornecedores, só com id e nomes, para os selects de filtro e formulário:
+  // sem paginação (não some fornecedor da lista) e sem as contagens da listagem
+  app.get("/suppliers/options", async (request): Promise<SupplierRefDTO[]> => {
+    return prisma.supplier.findMany({
+      where: { userId: request.user.sub },
+      select: { id: true, legalName: true, tradeName: true },
+      orderBy: [{ tradeName: "asc" }, { legalName: "asc" }],
+    });
   });
 
   app.get("/suppliers/:id", async (request) => {

@@ -104,6 +104,18 @@ describe("Fornecedores", () => {
     expect(byDoc.json().data[0].document).toBe("45723174000110");
   });
 
+  it("lista todos os fornecedores para os selects, além dos 100 de uma página", async () => {
+    const own = await createSession(app, "muitos@exemplo.com");
+    const names = Array.from({ length: 120 }, (_, i) => `Fornecedor ${String(i).padStart(3, "0")}`);
+    await prisma.supplier.createMany({ data: names.map((tradeName) => ({ userId: own.user.id, tradeName })) });
+    await createSupplier(); // de outro usuário: não entra
+
+    const res = await app.inject({ method: "GET", url: "/suppliers/options", cookies: own.cookies });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().map((s: { tradeName: string }) => s.tradeName)).toEqual(names);
+    expect(Object.keys(res.json()[0]).sort()).toEqual(["id", "legalName", "tradeName"]);
+  });
+
   it("atualiza nome fantasia e categoria sem apagar os dados que o formulário não envia", async () => {
     const { id } = (await createSupplier()).json();
     const res = await app.inject({ method: "PUT", url: `/suppliers/${id}`, cookies, payload: { tradeName: "Luz & Força Energia" } });
