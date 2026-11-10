@@ -6,7 +6,6 @@ import { useDashboardStats } from "../lib/dashboard";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { KpiCards, KpiCardsSkeleton } from "./dashboard/KpiCards";
-import { AgendaList } from "./dashboard/AgendaList";
 import { DistributionChart } from "./dashboard/DistributionChart";
 import { MonthStrip } from "./dashboard/MonthStrip";
 import { MonthlyChart } from "./dashboard/MonthlyChart";
@@ -86,8 +85,6 @@ export function DashboardPage() {
             <SupplierBars stats={stats} />
             <DistributionChart stats={stats} />
           </div>
-
-          <AgendaList items={stats.agenda} />
         </div>
       )}
     </div>
