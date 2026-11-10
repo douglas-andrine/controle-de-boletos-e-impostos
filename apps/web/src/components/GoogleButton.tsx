@@ -27,7 +27,7 @@ export function GoogleButton({ label = "Entrar com Google", disabled }: { label?
       href="/api/auth/google"
       onClick={(e) => (inactive ? e.preventDefault() : setRedirecting(true))}
       aria-disabled={inactive}
-      className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${inactive ? "pointer-events-none opacity-60" : ""}`}
+      className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-card px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-heading ${inactive ? "pointer-events-none opacity-60" : ""}`}
     >
       {redirecting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <GoogleIcon />}
       {label}

@@ -1,6 +1,7 @@
 import { Outlet } from "react-router";
 import { BellRing, ChartPie, ShieldCheck } from "lucide-react";
 import { Logo } from "../components/Logo";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 const highlights = [
   { Icon: BellRing, text: "Alertas visuais de vencimentos e atrasos" },
@@ -11,7 +12,7 @@ const highlights = [
 export function AuthLayout() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between bg-navy p-12 text-white lg:flex">
+      <aside className="surface-navy hidden flex-col justify-between bg-navy p-12 text-white lg:flex">
         <Logo />
         <div>
           <h2 className="max-w-md text-3xl leading-tight font-semibold">
@@ -31,7 +32,8 @@ export function AuthLayout() {
         <p className="text-xs text-slate-400">Projeto de portfólio · dados de demonstração são fictícios</p>
       </aside>
 
-      <main className="flex items-center justify-center p-4 sm:p-8">
+      <main className="relative flex items-center justify-center p-4 sm:p-8">
+        <ThemeToggle iconOnly className="absolute top-4 right-4 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-heading" />
         <div className="w-full max-w-sm">
           <Logo tone="dark" className="mb-8 lg:hidden" />
           <Outlet />

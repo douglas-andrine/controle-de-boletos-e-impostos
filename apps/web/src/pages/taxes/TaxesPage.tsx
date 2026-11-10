@@ -62,7 +62,7 @@ function MonthFilter({ value, onChange }: { value?: string; onChange: (month?: s
   const base = value ?? todayISO().slice(0, 7);
   const arrow = "rounded-md p-1.5 text-slate-500 hover:bg-slate-100";
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1" role="group" aria-label="Período de apuração">
+    <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-card p-1" role="group" aria-label="Período de apuração">
       <button type="button" onClick={() => onChange(shiftMonth(base, -1))} className={arrow} aria-label="Apuração anterior">
         <ChevronLeft className="size-4" />
       </button>
@@ -78,7 +78,7 @@ function MonthFilter({ value, onChange }: { value?: string; onChange: (month?: s
 
 function FilterChip({ label, onRemove, danger }: { label: string; onRemove: () => void; danger?: boolean }) {
   return (
-    <span className={`${pill} py-1 pr-1 ${danger ? "bg-danger/10 text-danger" : "bg-navy/10 text-navy"}`}>
+    <span className={`${pill} py-1 pr-1 ${danger ? "bg-danger/10 text-danger" : "bg-navy/10 text-heading"}`}>
       {label}
       <button type="button" onClick={onRemove} className="rounded-full p-0.5 hover:bg-black/5" aria-label={`Remover filtro ${label}`}>
         <X className="size-3.5" />
@@ -89,7 +89,7 @@ function FilterChip({ label, onRemove, danger }: { label: string; onRemove: () =
 
 /** Totais de todo o filtro atual, não só da página. */
 function SummaryStrip({ summary }: { summary: TaxListSummary }) {
-  const card = "min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3";
+  const card = "min-w-0 rounded-lg border border-slate-200 bg-card px-3 py-2.5 sm:px-4 sm:py-3";
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-3">
       <div className={card}>
@@ -236,7 +236,7 @@ export function TaxesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-navy">Impostos</h1>
+          <h1 className="text-2xl font-semibold text-heading">Impostos</h1>
           <p className="mt-1 text-sm text-slate-500">Guias e tributos a pagar: DARF, DAS, IPTU, ISS e outros.</p>
         </div>
         <Button onClick={() => openForm(null)}>
@@ -262,7 +262,7 @@ export function TaxesPage() {
                 </>
               }
               triggerLabel="Filtrar por entrega da mercadoria"
-              triggerClassName="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50"
+              triggerClassName="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-card px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-50"
               items={[
                 { label: "Toda entrega", onSelect: () => setFilter("entrega", undefined), selected: !delivery },
                 ...DELIVERY_FILTERS.map((f) => ({
@@ -282,7 +282,7 @@ export function TaxesPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Buscar imposto, NF ou empresa"
               aria-label="Buscar impostos"
-              className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
+              className="w-full rounded-lg border border-slate-300 bg-card py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-heading/30"
             />
             {isFetching && !isPending && (
               <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-slate-400" aria-label="Carregando" />
@@ -300,7 +300,7 @@ export function TaxesPage() {
                 danger={deliveryLate}
               />
             )}
-            <button type="button" onClick={clearAll} className="text-xs font-medium text-slate-500 hover:text-navy">
+            <button type="button" onClick={clearAll} className="text-xs font-medium text-slate-500 hover:text-heading">
               Limpar filtros
             </button>
           </div>
@@ -308,16 +308,16 @@ export function TaxesPage() {
       </div>
 
       {isError && !data ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-white p-10 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-card p-10 text-center">
           <p className="text-sm text-slate-600">Não foi possível carregar os impostos.</p>
           <Button variant="navy" onClick={() => refetch()}>
             Tentar novamente
           </Button>
         </div>
       ) : isPending ? (
-        <div className="h-64 animate-pulse rounded-lg border border-slate-200 bg-white" aria-hidden />
+        <div className="h-64 animate-pulse rounded-lg border border-slate-200 bg-card" aria-hidden />
       ) : data.meta.total === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-card p-12 text-center">
           <Landmark className="size-8 text-slate-300" aria-hidden />
           {hasFilter ? (
             <>
@@ -338,7 +338,7 @@ export function TaxesPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-white md:block">
+          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-card md:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
@@ -381,7 +381,7 @@ export function TaxesPage() {
 
           <ul className="space-y-3 md:hidden">
             {data.data.map((tax) => (
-              <li key={tax.id} className={`rounded-lg border border-slate-200 bg-white p-4 ${rowAccent(tax)}`}>
+              <li key={tax.id} className={`rounded-lg border border-slate-200 bg-card p-4 ${rowAccent(tax)}`}>
                 <div className="flex items-start justify-between gap-3">
                   <TaxNameCell tax={tax} />
                   <p className="text-lg font-semibold text-slate-800 tabular-nums">{formatBRL(tax.amountCents)}</p>

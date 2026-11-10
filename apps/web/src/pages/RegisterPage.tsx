@@ -44,7 +44,7 @@ export function RegisterPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-navy">Criar conta</h1>
+      <h1 className="text-2xl font-semibold text-heading">Criar conta</h1>
       <p className="mt-1 text-sm text-slate-500">Comece a organizar boletos e impostos em minutos.</p>
 
       <form onSubmit={onSubmit} noValidate className="mt-8 space-y-4">

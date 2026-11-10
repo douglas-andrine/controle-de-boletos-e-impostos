@@ -15,7 +15,7 @@ function RowActions({ supplier, onEdit, onDelete }: { supplier: SupplierDTO; onE
   const iconButton = "rounded-lg p-2 text-slate-500 hover:bg-slate-100";
   return (
     <div className="flex justify-end gap-1">
-      <button type="button" onClick={onEdit} className={`${iconButton} hover:text-navy`} aria-label={`Editar ${supplierName(supplier)}`}>
+      <button type="button" onClick={onEdit} className={`${iconButton} hover:text-heading`} aria-label={`Editar ${supplierName(supplier)}`}>
         <Pencil className="size-4" />
       </button>
       <button type="button" onClick={onDelete} className={`${iconButton} hover:text-danger`} aria-label={`Excluir ${supplierName(supplier)}`}>
@@ -113,7 +113,7 @@ export function SuppliersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-navy">Fornecedores</h1>
+          <h1 className="text-2xl font-semibold text-heading">Fornecedores</h1>
           <p className="mt-1 text-sm text-slate-500">Empresas usadas nos boletos e impostos.</p>
         </div>
         <Button onClick={() => openForm(null)}>
@@ -130,7 +130,7 @@ export function SuppliersPage() {
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Buscar por nome"
           aria-label="Buscar fornecedores"
-          className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
+          className="w-full rounded-lg border border-slate-300 bg-card py-2.5 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-heading/30"
         />
         {isFetching && !isPending && (
           <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-slate-400" aria-label="Buscando" />
@@ -138,16 +138,16 @@ export function SuppliersPage() {
       </div>
 
       {isError && !data ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-white p-10 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-card p-10 text-center">
           <p className="text-sm text-slate-600">Não foi possível carregar os fornecedores.</p>
           <Button variant="navy" onClick={() => refetch()}>
             Tentar novamente
           </Button>
         </div>
       ) : isPending ? (
-        <div className="h-64 animate-pulse rounded-lg border border-slate-200 bg-white" aria-hidden />
+        <div className="h-64 animate-pulse rounded-lg border border-slate-200 bg-card" aria-hidden />
       ) : data.meta.total === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-card p-12 text-center">
           <Building2 className="size-8 text-slate-300" aria-hidden />
           {hasFilter ? (
             <p className="text-sm text-slate-500">Nenhum fornecedor encontrado para “{search}”.</p>
@@ -164,7 +164,7 @@ export function SuppliersPage() {
       ) : (
         <div className="space-y-4">
           {/* Desktop: tabela */}
-          <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white md:block">
+          <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-card md:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
@@ -200,7 +200,7 @@ export function SuppliersPage() {
           {/* Mobile: cartões */}
           <ul className="space-y-3 md:hidden">
             {data.data.map((s) => (
-              <li key={s.id} className="rounded-lg border border-slate-200 bg-white p-4">
+              <li key={s.id} className="rounded-lg border border-slate-200 bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-slate-800">{supplierName(s)}</p>

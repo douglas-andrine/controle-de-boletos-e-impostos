@@ -7,7 +7,7 @@ function FullScreenLoader() {
   const slow = useSlowRequest(true);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-4 text-center text-slate-500">
-      <Loader2 className="size-8 animate-spin text-navy" aria-hidden />
+      <Loader2 className="size-8 animate-spin text-heading" aria-hidden />
       <p className="text-sm">
         {slow ? "Acordando o servidor… no plano gratuito isso pode levar até 1 minuto." : "Carregando…"}
       </p>

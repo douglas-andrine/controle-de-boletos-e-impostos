@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* dark: só para os poucos ajustes que os tokens abaixo não cobrem */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Paleta do TributoLeão: gera utilitários como bg-navy, text-gold, border-danger */
 @theme {
   --color-navy: #0b2545;
@@ -9,12 +12,59 @@
   --color-danger: #e63946;
   --color-surface: #f4f6f9;
 
+  /* Tokens que mudam com o tema: fundo dos cartões, títulos/valores e barras de série única */
+  --color-card: #ffffff;
+  --color-heading: var(--color-navy);
+  --color-bar: var(--color-navy-light);
+
   /* Séries de gráfico: tons da família da marca validados para daltonismo
      (o navy/dourado da marca é escuro/claro demais para marcas de dados) */
   --color-series-tax: #2a78d6;
   --color-series-boleto: #eda100;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Modo escuro: em vez de um dark: em cada classe, os tokens trocam de valor.
+ * A escala slate é invertida (texto claro, bordas e fundos escuros), então
+ * text-slate-800 continua sendo "o texto principal" nos dois temas.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-surface: #0a1120;
+  --color-card: #111a2c;
+  --color-heading: #e6edf7;
+  --color-bar: #5b7fb8;
+
+  --color-slate-50: #141d2e;
+  --color-slate-100: #1a2436;
+  --color-slate-200: #253148;
+  --color-slate-300: #34425c;
+  --color-slate-400: #7d8ba3;
+  --color-slate-500: #98a5ba;
+  --color-slate-600: #b3bfd0;
+  --color-slate-700: #c9d3e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+  --color-slate-950: #f8fafc;
+
+  /* Etiqueta "Buscar no portal" e prazo de entrega: fundo escuro, texto claro */
+  --color-amber-100: #3a2a0a;
+  --color-amber-200: #4a360c;
+  --color-amber-800: #fcd27a;
+
+  /* Séries revalidadas contra o fundo escuro dos cartões */
+  --color-series-tax: #3987e5;
+  --color-series-boleto: #c98500;
+}
+
+/* Superfícies navy (sidebar, avisos, painel do login) são escuras nos dois temas:
+   mantêm os cinzas originais, feitos para texto sobre fundo escuro */
+:root[data-theme="dark"] .surface-navy {
+  --color-slate-300: oklch(86.9% 0.022 252.894);
+  --color-slate-400: oklch(70.4% 0.04 256.788);
 }
 
 body {

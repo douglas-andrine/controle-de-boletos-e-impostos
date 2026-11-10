@@ -3,7 +3,7 @@ import { CircleAlert, Info } from "lucide-react";
 
 const tones = {
   error: { box: "border-danger/30 bg-danger/5 text-danger", Icon: CircleAlert },
-  info: { box: "border-gold/40 bg-gold/10 text-navy", Icon: Info },
+  info: { box: "border-gold/40 bg-gold/10 text-heading", Icon: Info },
 };
 
 export function Alert({ tone = "error", children }: { tone?: keyof typeof tones; children: ReactNode }) {

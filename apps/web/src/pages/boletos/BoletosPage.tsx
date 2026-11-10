@@ -42,7 +42,7 @@ function AmountCell({ boleto }: { boleto: BoletoDTO }) {
 }
 
 const filterInput =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-2 focus:outline-navy/30";
+  "w-full rounded-lg border border-slate-300 bg-card px-3 py-2 text-sm text-slate-700 focus:outline-2 focus:outline-heading/30";
 
 export function BoletosPage() {
   // Filtros na URL: ?status=PENDENTE&fornecedor=<id>&venc=2026-10&dia=5&boleto=portal&q=energia&page=2
@@ -174,7 +174,7 @@ export function BoletosPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-navy">Boletos</h1>
+          <h1 className="text-2xl font-semibold text-heading">Boletos</h1>
           <p className="mt-1 text-sm text-slate-500">Contas a pagar operacionais: aluguel, energia, serviços e fornecedores.</p>
         </div>
         <Button onClick={() => openForm(null)}>
@@ -194,7 +194,7 @@ export function BoletosPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Buscar por nota ou fornecedor"
               aria-label="Buscar boletos"
-              className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-navy/30"
+              className="w-full rounded-lg border border-slate-300 bg-card py-2 pr-10 pl-9 text-sm placeholder:text-slate-400 focus:outline-2 focus:outline-heading/30"
             />
             {isFetching && !isPending && (
               <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-slate-400" aria-label="Carregando" />
@@ -295,16 +295,16 @@ export function BoletosPage() {
       </div>
 
       {isError && !data ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-white p-10 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-card p-10 text-center">
           <p className="text-sm text-slate-600">Não foi possível carregar os boletos.</p>
           <Button variant="navy" onClick={() => refetch()}>
             Tentar novamente
           </Button>
         </div>
       ) : isPending ? (
-        <div className="h-64 animate-pulse rounded-lg border border-slate-200 bg-white" aria-hidden />
+        <div className="h-64 animate-pulse rounded-lg border border-slate-200 bg-card" aria-hidden />
       ) : data.meta.total === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-card p-12 text-center">
           <Receipt className="size-8 text-slate-300" aria-hidden />
           <p className="text-sm text-slate-500">{hasFilter ? "Nenhum boleto encontrado com esses filtros." : "Nenhum boleto cadastrado ainda."}</p>
           {!hasFilter && (
@@ -316,7 +316,7 @@ export function BoletosPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-white md:block">
+          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-card md:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
@@ -355,7 +355,7 @@ export function BoletosPage() {
 
           <ul className="space-y-3 md:hidden">
             {data.data.map((b) => (
-              <li key={b.id} className="rounded-lg border border-slate-200 bg-white p-4">
+              <li key={b.id} className="rounded-lg border border-slate-200 bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <SupplierInvoice boleto={b} />
                   <div className="flex flex-col items-end gap-1.5">

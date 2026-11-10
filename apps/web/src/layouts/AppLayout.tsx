@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { Building2, KeyRound, Landmark, LayoutDashboard, LogOut, Menu, Receipt, Users, X } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { PasswordDialog } from "../components/PasswordDialog";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { DEMO_EMAIL, useCurrentUser, useLogout } from "../lib/auth";
 
 const navItems = [
@@ -21,7 +22,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [passwordOpen, setPasswordOpen] = useState(false);
 
   return (
-    <div className="flex h-full flex-col bg-navy text-slate-300">
+    <div className="surface-navy flex h-full flex-col bg-navy text-slate-300">
       <div className="px-6 py-6">
         <Logo />
       </div>
@@ -48,13 +49,14 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="border-t border-white/10 p-4">
         <p className="truncate text-sm font-medium text-white">{user?.name}</p>
         <p className="truncate text-xs text-slate-400">{user?.email}</p>
+        <ThemeToggle className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light hover:text-white" />
         {/* A senha do demo é pública e a API recusa a troca */}
         {user && user.email !== DEMO_EMAIL && (
           <>
             <button
               type="button"
               onClick={() => setPasswordOpen(true)}
-              className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light hover:text-white"
+              className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light hover:text-white"
             >
               <KeyRound className="size-4" aria-hidden />
               {user.hasPassword ? "Alterar senha" : "Definir senha"}

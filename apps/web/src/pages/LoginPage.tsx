@@ -44,7 +44,7 @@ export function LoginPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-navy">Bem-vindo de volta</h1>
+      <h1 className="text-2xl font-semibold text-heading">Bem-vindo de volta</h1>
       <p className="mt-1 text-sm text-slate-500">Entre para acompanhar seus vencimentos.</p>
 
       <form onSubmit={onSubmit} noValidate className="mt-8 space-y-4">

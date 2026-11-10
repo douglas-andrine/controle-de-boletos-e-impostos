@@ -16,7 +16,7 @@ export function Pagination({ meta, onPageChange, label }: PaginationProps) {
   const from = (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
   const buttonClass =
-    "inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-card px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <nav className="flex items-center justify-between gap-4 text-sm text-slate-500" aria-label="Paginação">

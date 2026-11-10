@@ -20,14 +20,14 @@ export function SupplierBars({ stats }: { stats: DashboardStatsDTO }) {
             <li key={s.id}>
               <Link
                 to={`/boletos?fornecedor=${s.id}&venc=${month}`}
-                className="group grid grid-cols-[7rem_1fr] items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-navy sm:grid-cols-[9rem_1fr]"
+                className="group grid grid-cols-[7rem_1fr] items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-heading sm:grid-cols-[9rem_1fr]"
                 title={`${s.name}: ${formatBRL(s.totalCents)} em ${s.count} lançamento(s). Ver boletos`}
               >
-                <span className="truncate text-right text-xs text-slate-600 group-hover:text-navy">{s.name}</span>
+                <span className="truncate text-right text-xs text-slate-600 group-hover:text-heading">{s.name}</span>
                 <span className="flex items-center gap-3">
                   <span className="flex-1">
                     <span
-                      className="block h-4 rounded-r bg-navy-light transition-colors group-hover:bg-navy"
+                      className="block h-4 rounded-r bg-bar transition-opacity group-hover:opacity-80"
                       style={{ width: `${Math.max((s.totalCents / max) * 100, 2)}%` }}
                     />
                   </span>

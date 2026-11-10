@@ -5,7 +5,7 @@ export function Logo({ tone = "light", className = "" }: { tone?: "light" | "dar
         <rect width="32" height="32" rx="8" fill={tone === "light" ? "#13315c" : "#0B2545"} />
         <path d="M9 10h14M16 10v13" stroke="#F0A500" strokeWidth="3.5" strokeLinecap="round" />
       </svg>
-      <span className={`text-xl ${tone === "light" ? "text-white" : "text-navy"}`}>
+      <span className={`text-xl ${tone === "light" ? "text-white" : "text-heading"}`}>
         Tributo<span className="text-gold">Leão</span>
       </span>
     </span>

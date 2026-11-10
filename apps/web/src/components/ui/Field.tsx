@@ -31,8 +31,8 @@ export function Field({ label, error, id, type = "text", prefix, className = "",
           type={isPassword && showPassword ? "text" : type}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-2 focus:outline-offset-0 ${
-            error ? "border-danger focus:outline-danger/40" : "border-slate-300 focus:outline-navy/30"
+          className={`w-full rounded-lg border bg-card px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-2 focus:outline-offset-0 ${
+            error ? "border-danger focus:outline-danger/40" : "border-slate-300 focus:outline-heading/30"
           } ${isPassword ? "pr-10" : ""} ${prefix ? "pl-10" : ""}`}
           {...props}
         />

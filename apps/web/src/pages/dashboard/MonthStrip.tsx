@@ -39,7 +39,7 @@ export function MonthStrip({ month, onChange }: { month: string; onChange: (mont
               aria-pressed={selected}
               aria-label={formatMonth(m)}
               className={`relative rounded-md px-1 py-1 text-xs font-medium transition-colors ${
-                selected ? "bg-white text-navy shadow-sm" : "text-white/80 hover:bg-white/15 hover:text-white"
+                selected ? "bg-card text-heading shadow-sm" : "text-white/80 hover:bg-white/15 hover:text-white"
               }`}
             >
               {formatMonthAbbr(m)}

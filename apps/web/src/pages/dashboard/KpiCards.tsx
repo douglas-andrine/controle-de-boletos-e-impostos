@@ -8,12 +8,12 @@ type FlowCardProps = { label: string; Icon: typeof Wallet; value: ReactNode; det
 /** Cartão do fluxo do mês; o valor fica em tinta de texto, a cor só no ícone e na borda. */
 function FlowCard({ label, Icon, value, detail, accent }: FlowCardProps) {
   return (
-    <div className={`min-w-0 flex-1 rounded-xl bg-white p-4 text-slate-800 shadow-sm ${accent ? "ring-2 ring-emerald-brand" : ""}`}>
+    <div className={`min-w-0 flex-1 rounded-xl bg-card p-4 text-slate-800 shadow-sm ${accent ? "ring-2 ring-emerald-brand" : ""}`}>
       <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-        <Icon className={`size-4 ${accent ? "text-emerald-brand" : "text-navy"}`} aria-hidden />
+        <Icon className={`size-4 ${accent ? "text-emerald-brand" : "text-heading"}`} aria-hidden />
         {label}
       </p>
-      <p className="mt-1.5 text-2xl font-semibold text-navy">{value}</p>
+      <p className="mt-1.5 text-2xl font-semibold text-heading">{value}</p>
       <div className="mt-1 text-xs text-slate-500">{detail}</div>
     </div>
   );
@@ -30,12 +30,12 @@ function FlowArrow() {
 /** Indicador menor, empilhado ao lado do fluxo. */
 function MiniStat({ label, Icon, value, detail }: { label: string; Icon: typeof Wallet; value: ReactNode; detail: ReactNode }) {
   return (
-    <div className="rounded-xl bg-white px-4 py-3 text-slate-800 shadow-sm">
+    <div className="rounded-xl bg-card px-4 py-3 text-slate-800 shadow-sm">
       <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-        <Icon className="size-3.5 text-navy" aria-hidden />
+        <Icon className="size-3.5 text-heading" aria-hidden />
         {label}
       </p>
-      <p className="mt-0.5 text-lg font-semibold text-navy">{value}</p>
+      <p className="mt-0.5 text-lg font-semibold text-heading">{value}</p>
       <div className="text-xs text-slate-500">{detail}</div>
     </div>
   );

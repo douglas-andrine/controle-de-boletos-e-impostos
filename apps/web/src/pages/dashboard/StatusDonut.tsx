@@ -67,7 +67,7 @@ export function StatusDonut({ stats }: { stats: DashboardStatsDTO }) {
             </svg>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className="text-[11px] text-slate-500">{center ? center.label : "Total"}</span>
-              <span className="text-sm font-semibold text-navy">{formatBRL(center ? center.cents : total)}</span>
+              <span className="text-sm font-semibold text-heading">{formatBRL(center ? center.cents : total)}</span>
               {center && <span className="text-[11px] text-slate-500">{formatPercent(Math.round(center.percent * 10) / 10)}</span>}
             </div>
           </div>
@@ -81,7 +81,7 @@ export function StatusDonut({ stats }: { stats: DashboardStatsDTO }) {
                 onMouseLeave={() => setActive(null)}
                 onFocus={() => setActive(s.key)}
                 onBlur={() => setActive(null)}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-navy"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-heading"
               >
                 <s.Icon className={`size-4 shrink-0 ${s.text}`} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-slate-700">{s.label}</span>

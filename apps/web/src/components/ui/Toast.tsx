@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               role="status"
-              className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-lg bg-navy px-4 py-3 text-sm text-white shadow-lg"
+              className="surface-navy pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-lg bg-navy px-4 py-3 text-sm text-white shadow-lg"
             >
               <Icon className={`size-5 shrink-0 ${toast.tone === "error" ? "text-danger" : "text-emerald-400"}`} aria-hidden />
               <span className="flex-1">{toast.message}</span>

@@ -54,7 +54,7 @@ export function DistributionChart({ stats }: { stats: DashboardStatsDTO }) {
                   onFocus={() => setActive(s.key)}
                   onBlur={() => setActive(null)}
                   style={{ width: `${s.percent}%` }}
-                  className={`${s.colorClass} h-full cursor-default transition-opacity first:rounded-l last:rounded-r focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
+                  className={`${s.colorClass} h-full cursor-default transition-opacity first:rounded-l last:rounded-r focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-heading ${
                     active && active !== s.key ? "opacity-40" : ""
                   }`}
                 />

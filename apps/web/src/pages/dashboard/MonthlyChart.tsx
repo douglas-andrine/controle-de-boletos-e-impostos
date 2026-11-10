@@ -75,8 +75,8 @@ export function MonthlyChart({ points, selected, onSelect }: MonthlyChartProps) 
                     onBlur={() => setHovered(null)}
                     aria-label={`${formatMonth(p.month)}: ${formatBRL(total)}. Ver este mês`}
                     aria-pressed={isSelected}
-                    className={`flex h-full flex-1 flex-col justify-end rounded-md px-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-navy sm:px-1.5 ${
-                      isSelected ? "bg-navy/5" : "hover:bg-slate-50"
+                    className={`flex h-full flex-1 flex-col justify-end rounded-md px-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-heading sm:px-1.5 ${
+                      isSelected ? "bg-heading/5" : "hover:bg-slate-50"
                     } ${hovered && hovered !== p.month ? "opacity-50" : ""}`}
                   >
                     {/* Boletos em cima, impostos na base; 2px entre eles; ponta superior arredondada */}
@@ -122,7 +122,7 @@ export function MonthlyChart({ points, selected, onSelect }: MonthlyChartProps) 
             {points.map((p) => (
               <span
                 key={p.month}
-                className={`flex-1 text-center text-[11px] ${p.month === selected ? "font-semibold text-navy" : "text-slate-500"}`}
+                className={`flex-1 text-center text-[11px] ${p.month === selected ? "font-semibold text-heading" : "text-slate-500"}`}
               >
                 {formatMonthAbbr(p.month)}
               </span>

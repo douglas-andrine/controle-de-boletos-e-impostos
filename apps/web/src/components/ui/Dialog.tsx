@@ -37,13 +37,13 @@ export function Dialog({ open, onClose, title, description, children, size = "md
       // Clique no backdrop (fora da caixa) fecha
       onClick={(e) => e.target === ref.current && onClose()}
       aria-labelledby="dialog-title"
-      className={`m-auto w-[calc(100%-2rem)] rounded-lg bg-white p-0 shadow-xl backdrop:bg-navy/50 ${size === "sm" ? "max-w-md" : "max-w-xl"}`}
+      className={`m-auto w-[calc(100%-2rem)] rounded-lg bg-card p-0 shadow-xl backdrop:bg-navy/50 ${size === "sm" ? "max-w-md" : "max-w-xl"}`}
     >
       {open && (
         <div className="p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <h2 id="dialog-title" className="text-lg font-semibold text-navy">
+              <h2 id="dialog-title" className="text-lg font-semibold text-heading">
                 {title}
               </h2>
               {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}

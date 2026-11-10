@@ -3,10 +3,10 @@ import { Loader2 } from "lucide-react";
 
 const variants = {
   primary: "bg-emerald-brand text-white hover:bg-emerald-brand/90 focus-visible:outline-emerald-brand",
-  navy: "bg-navy text-white hover:bg-navy-light focus-visible:outline-navy",
-  outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-navy",
-  gold: "border border-gold bg-gold/10 text-navy hover:bg-gold/20 focus-visible:outline-gold",
-  ghost: "text-slate-600 hover:bg-slate-100 focus-visible:outline-navy",
+  navy: "bg-navy text-white hover:bg-navy-light focus-visible:outline-heading",
+  outline: "border border-slate-300 bg-card text-slate-700 hover:bg-slate-50 focus-visible:outline-heading",
+  gold: "border border-gold bg-gold/10 text-heading hover:bg-gold/20 focus-visible:outline-gold",
+  ghost: "text-slate-600 hover:bg-slate-100 focus-visible:outline-heading",
   danger: "bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger",
 };
 

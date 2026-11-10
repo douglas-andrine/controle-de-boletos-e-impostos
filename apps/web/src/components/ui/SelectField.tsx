@@ -18,8 +18,8 @@ export function SelectField({ label, error, id, className = "", children, ...pro
           id={selectId}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full appearance-none rounded-lg border bg-white py-2.5 pr-9 pl-3 text-sm text-slate-800 focus:outline-2 focus:outline-offset-0 ${
-            error ? "border-danger focus:outline-danger/40" : "border-slate-300 focus:outline-navy/30"
+          className={`w-full appearance-none rounded-lg border bg-card py-2.5 pr-9 pl-3 text-sm text-slate-800 focus:outline-2 focus:outline-offset-0 ${
+            error ? "border-danger focus:outline-danger/40" : "border-slate-300 focus:outline-heading/30"
           }`}
           {...props}
         >

@@ -83,7 +83,7 @@ export function Menu({ trigger, triggerLabel, triggerClassName, items }: MenuPro
             ref={menuRef}
             role="menu"
             style={position ? { top: position.top, right: position.right } : { visibility: "hidden" }}
-            className="fixed z-50 min-w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+            className="fixed z-50 min-w-44 rounded-lg border border-slate-200 bg-card p-1 shadow-lg"
           >
             {items.map(({ label, Icon, onSelect, danger, selected }) => (
               <button
@@ -97,7 +97,7 @@ export function Menu({ trigger, triggerLabel, triggerClassName, items }: MenuPro
                 }}
                 className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm whitespace-nowrap focus:outline-none ${
                   danger ? "text-danger hover:bg-danger/5 focus:bg-danger/5" : "text-slate-700 hover:bg-slate-100 focus:bg-slate-100"
-                } ${selected ? "font-medium text-navy" : ""}`}
+                } ${selected ? "font-medium text-heading" : ""}`}
               >
                 {Icon && <Icon className="size-4 shrink-0" aria-hidden />}
                 {label}

@@ -38,7 +38,7 @@ export function DashboardPage() {
         </div>
 
         {isError && !stats ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-8 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-xl bg-card p-8 text-center">
             <p className="text-sm text-slate-600">Não foi possível carregar o painel.</p>
             <Button variant="navy" onClick={() => refetch()}>
               Tentar novamente

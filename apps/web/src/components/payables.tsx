@@ -15,7 +15,7 @@ const STATUS_TABS: { value: EffectiveStatus | undefined; label: string }[] = [
 
 export function StatusTabs({ value, onChange }: { value?: EffectiveStatus; onChange: (status?: EffectiveStatus) => void }) {
   return (
-    <div className="flex rounded-lg border border-slate-200 bg-white p-1" role="group" aria-label="Filtrar por status">
+    <div className="flex rounded-lg border border-slate-200 bg-card p-1" role="group" aria-label="Filtrar por status">
       {STATUS_TABS.map((tab) => (
         <button
           key={tab.label}
@@ -85,7 +85,7 @@ export function PayableActions({ label, status, paymentCode, onPay, onUnpay, onE
       <Menu
         trigger={<Ellipsis className="size-4" />}
         triggerLabel={`Mais ações de ${label}`}
-        triggerClassName="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-navy"
+        triggerClassName="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-heading"
         items={[
           ...menuItems,
           { label: "Editar", Icon: Pencil, onSelect: onEdit },

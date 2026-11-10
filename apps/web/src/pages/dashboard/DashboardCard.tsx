@@ -14,7 +14,7 @@ type DashboardCardProps = {
 
 export function DashboardCard({ title, subtitle, tone = "navy", className = "", children }: DashboardCardProps) {
   return (
-    <section className={`flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}>
+    <section className={`flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-card shadow-sm ${className}`}>
       <header className={`${TONES[tone]} px-5 py-2.5 text-white`}>
         <h2 className="text-sm font-semibold">{title}</h2>
       </header>
