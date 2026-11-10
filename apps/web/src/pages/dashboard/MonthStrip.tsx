@@ -13,7 +13,7 @@ export function MonthStrip({ month, onChange }: { month: string; onChange: (mont
       <button
         type="button"
         onClick={() => onChange(shiftMonth(month, -12))}
-        className="rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+        className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white sm:p-1.5"
         aria-label="Ano anterior"
       >
         <ChevronLeft className="size-4" aria-hidden />
@@ -22,7 +22,7 @@ export function MonthStrip({ month, onChange }: { month: string; onChange: (mont
       <button
         type="button"
         onClick={() => onChange(shiftMonth(month, 12))}
-        className="rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+        className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white sm:p-1.5"
         aria-label="Próximo ano"
       >
         <ChevronRight className="size-4" aria-hidden />
@@ -38,7 +38,7 @@ export function MonthStrip({ month, onChange }: { month: string; onChange: (mont
               onClick={() => onChange(m)}
               aria-pressed={selected}
               aria-label={formatMonth(m)}
-              className={`relative rounded-md px-1 py-1 text-xs font-medium transition-colors ${
+              className={`relative rounded-md px-1 py-2 text-xs font-medium transition-colors sm:py-1 ${
                 selected ? "bg-card text-heading shadow-sm" : "text-white/80 hover:bg-white/15 hover:text-white"
               }`}
             >

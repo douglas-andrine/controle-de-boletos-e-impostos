@@ -316,7 +316,7 @@ export function BoletosPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-card md:block">
+          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-card xl:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
                 <tr>
@@ -353,7 +353,7 @@ export function BoletosPage() {
             </table>
           </div>
 
-          <ul className="space-y-3 md:hidden">
+          <ul className="grid gap-3 md:grid-cols-2 xl:hidden">
             {data.data.map((b) => (
               <li key={b.id} className="rounded-lg border border-slate-200 bg-card p-4">
                 <div className="flex items-start justify-between gap-3">

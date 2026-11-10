@@ -60,7 +60,7 @@ function BoletoCountLink({ supplier, suffix = "" }: { supplier: SupplierDTO; suf
   return (
     <Link
       to={`/boletos?fornecedor=${supplier.id}`}
-      className="font-medium text-emerald-brand hover:underline"
+      className="-my-1 inline-block py-1 font-medium text-emerald-brand hover:underline"
       title={`Ver boletos de ${supplierName(supplier)}`}
     >
       {supplier.boletoCount}

@@ -131,27 +131,30 @@ export function MonthlyChart({ points, selected, onSelect }: MonthlyChartProps) 
         </div>
       </div>
 
-      <table className="sr-only">
-        <caption>Vencimentos por mês em {year}</caption>
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th>Impostos</th>
-            <th>Boletos</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((p, i) => (
-            <tr key={p.month}>
-              <td>{formatMonth(p.month)}</td>
-              <td>{formatBRL(p.taxesCents)}</td>
-              <td>{formatBRL(p.boletosCents)}</td>
-              <td>{formatBRL(totals[i]!)}</td>
+      {/* Tabelas ignoram a largura de 1px do sr-only e esticariam a página: o div é que fica escondido */}
+      <div className="sr-only">
+        <table>
+          <caption>Vencimentos por mês em {year}</caption>
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th>Impostos</th>
+              <th>Boletos</th>
+              <th>Total</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {points.map((p, i) => (
+              <tr key={p.month}>
+                <td>{formatMonth(p.month)}</td>
+                <td>{formatBRL(p.taxesCents)}</td>
+                <td>{formatBRL(p.boletosCents)}</td>
+                <td>{formatBRL(totals[i]!)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </DashboardCard>
   );
 }
