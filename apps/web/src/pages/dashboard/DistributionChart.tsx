@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatBRL, type DashboardStatsDTO } from "@tributoleao/shared";
 import { formatMonthName, formatPercent } from "../../lib/format";
+import { DashboardCard } from "./DashboardCard";
 
 // Parte-de-um-todo com 2 categorias: barra empilhada horizontal (não pizza de 2 fatias).
 // Identidade nunca só pela cor: rótulos diretos + legenda em tabela com os valores.
@@ -22,18 +23,14 @@ export function DistributionChart({ stats }: { stats: DashboardStatsDTO }) {
   const activeSegment = segments.find((s) => s.key === active);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5">
-      <header>
-        <h2 className="font-semibold text-navy">Impostos vs. boletos</h2>
-        <p className="text-xs text-slate-500">Distribuição dos vencimentos de {formatMonthName(month)}</p>
-      </header>
+    <DashboardCard title="Impostos vs. boletos" tone="emerald" subtitle={`Distribuição dos vencimentos de ${formatMonthName(month)}`}>
 
       {total === 0 ? (
         <p className="py-10 text-center text-sm text-slate-500">Nenhum lançamento com vencimento neste mês.</p>
       ) : (
         <>
           {/* Rótulos diretos acima de cada segmento */}
-          <div className="mt-6 flex gap-0.5 text-xs text-slate-600" aria-hidden>
+          <div className="mt-2 flex gap-0.5 text-xs text-slate-600" aria-hidden>
             {visible.map((s) => (
               <span key={s.key} style={{ width: `${s.percent}%` }} className="truncate first:text-left last:text-right">
                 {s.percent >= MIN_LABEL_PERCENT && (
@@ -112,6 +109,6 @@ export function DistributionChart({ stats }: { stats: DashboardStatsDTO }) {
           </table>
         </>
       )}
-    </section>
+    </DashboardCard>
   );
 }

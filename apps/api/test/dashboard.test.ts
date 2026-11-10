@@ -100,6 +100,44 @@ describe("GET /dashboard/stats", () => {
     expect(body.distribution).toEqual({ taxesCents: 3000, boletosCents: 3600, taxesPercent: 45.5, boletosPercent: 54.5 });
   });
 
+  it("monta a série mensal do ano e os fornecedores com mais valor no mês", async () => {
+    await tax(1000, "2030-01-10");
+    await boleto(3000, "2030-01-20", { feesCents: 100 });
+    await boleto(500, "2030-03-05");
+    await tax(7777, "2029-12-10"); // outro ano
+
+    const other = (await app.inject({ method: "POST", url: "/suppliers", cookies, payload: { tradeName: "Papelaria" } })).json().id;
+    await app.inject({
+      method: "POST",
+      url: "/taxes",
+      cookies,
+      payload: { name: "ICMS", amountCents: 9000, dueDate: "2030-01-12", referenceMonth: "2030-01", supplierId: other },
+    });
+
+    const body = await stats("?month=2030-01");
+    expect(body.yearByMonth).toHaveLength(12);
+    expect(body.yearByMonth[0]).toEqual({ month: "2030-01", taxesCents: 10000, boletosCents: 3100 });
+    expect(body.yearByMonth[1]).toEqual({ month: "2030-02", taxesCents: 0, boletosCents: 0 });
+    expect(body.yearByMonth[2]).toEqual({ month: "2030-03", taxesCents: 0, boletosCents: 500 });
+    // Imposto sem fornecedor (o DARF) fica de fora; o ICMS conta para a Papelaria
+    expect(body.topSuppliers).toEqual([
+      { id: other, name: "Papelaria", totalCents: 9000, count: 1 },
+      { id: supplierId, name: validSupplier.tradeName, totalCents: 3100, count: 1 },
+    ]);
+  });
+
+  it("separa o que já venceu dentro do mês", async () => {
+    // Mês passado: todo pendente já venceu; o pago não conta
+    await tax(1000, "2020-01-10");
+    await boleto(2000, "2020-01-20", { feesCents: 50 });
+    await boleto(4000, "2020-01-05", { paid: true });
+    // Mês futuro: nada venceu ainda
+    await tax(3000, "2099-01-10");
+
+    expect((await stats("?month=2020-01")).monthOverdue).toEqual({ count: 2, totalCents: 3050 });
+    expect((await stats("?month=2099-01")).monthOverdue).toEqual({ count: 0, totalCents: 0 });
+  });
+
   it("monta atrasados, boletos pendentes, próximo vencimento e agenda relativos a hoje", async () => {
     await tax(10000, isoDay(-5), { name: "DAS" }); // atrasado
     await boleto(2000, isoDay(-2), { feesCents: 150, description: "Internet" }); // atrasado

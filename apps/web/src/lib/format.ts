@@ -1,8 +1,10 @@
 import { todayISO } from "@tributoleao/shared";
 
-const monthFormatter =new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
 const monthNameFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", timeZone: "UTC" });
 const percentFormatter = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+const compactBRLFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", notation: "compact", maximumFractionDigits: 1 });
+const monthAbbrFormatter = new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" });
 
 /** "2026-10-29" → "29/10/2026" */
 export function formatDate(iso: string): string {
@@ -28,6 +30,16 @@ export function shiftMonth(month: string, delta: number): string {
 
 export function formatPercent(value: number): string {
   return `${percentFormatter.format(value)}%`;
+}
+
+/** 123456789 → "R$ 1,2 mi": eixos e espaços curtos */
+export function formatCompactBRL(cents: number): string {
+  return compactBRLFormatter.format(cents / 100);
+}
+
+/** "2026-10" → "out" */
+export function formatMonthAbbr(month: string): string {
+  return monthAbbrFormatter.format(new Date(`${month}-01T00:00:00Z`)).replace(".", "");
 }
 
 /** "2026-09" → "09/2026" */

@@ -1,51 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DELIVERY_DEADLINE_DAYS, formatBRL, todayISO } from "@tributoleao/shared";
 import { DEMO_EMAIL, useCurrentUser } from "../lib/auth";
 import { useDashboardStats } from "../lib/dashboard";
-import { formatMonth, shiftMonth } from "../lib/format";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { KpiCards, KpiCardsSkeleton } from "./dashboard/KpiCards";
 import { AgendaList } from "./dashboard/AgendaList";
 import { DistributionChart } from "./dashboard/DistributionChart";
-
-function MonthPicker({ month, onChange }: { month: string; onChange: (month: string) => void }) {
-  const current = todayISO().slice(0, 7);
-  return (
-    <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1">
-      <button
-        type="button"
-        onClick={() => onChange(shiftMonth(month, -1))}
-        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
-        aria-label="Mês anterior"
-      >
-        <ChevronLeft className="size-4" />
-      </button>
-      <span className="inline-block min-w-36 text-center text-sm font-medium text-slate-700 first-letter:uppercase" aria-live="polite">
-        {formatMonth(month)}
-      </span>
-      <button
-        type="button"
-        onClick={() => onChange(shiftMonth(month, 1))}
-        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
-        aria-label="Próximo mês"
-      >
-        <ChevronRight className="size-4" />
-      </button>
-      {month !== current && (
-        <button
-          type="button"
-          onClick={() => onChange(current)}
-          className="rounded-md px-2 py-1 text-xs font-medium text-emerald-brand hover:bg-emerald-brand/10"
-        >
-          Hoje
-        </button>
-      )}
-    </div>
-  );
-}
+import { MonthStrip } from "./dashboard/MonthStrip";
+import { MonthlyChart } from "./dashboard/MonthlyChart";
+import { PaidGauge } from "./dashboard/PaidGauge";
+import { StatusDonut } from "./dashboard/StatusDonut";
+import { SupplierBars } from "./dashboard/SupplierBars";
 
 export function DashboardPage() {
   const { data: user } = useCurrentUser();
@@ -59,24 +26,36 @@ export function DashboardPage() {
         <Alert tone="info">Você está no modo demonstração. Todos os dados exibidos são fictícios.</Alert>
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-navy">Olá, {firstName}!</h1>
-          <p className="mt-1 text-sm text-slate-500">Resumo dos seus impostos e boletos.</p>
+      {/* Faixa do topo: saudação, meses e os números do mês */}
+      <section className="space-y-5 rounded-2xl bg-navy p-4 text-white shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Olá, {firstName}!</h1>
+            <p className="mt-1 text-sm text-white/70">Resumo dos seus impostos e boletos.</p>
+          </div>
+          <div className="xl:w-[34rem]">
+            <MonthStrip month={month} onChange={setMonth} />
+          </div>
         </div>
-        <MonthPicker month={month} onChange={setMonth} />
-      </div>
 
-      {isError && !stats ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200 bg-white p-10 text-center">
-          <p className="text-sm text-slate-600">Não foi possível carregar o painel.</p>
-          <Button variant="navy" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
-      ) : isPending ? (
-        <KpiCardsSkeleton />
-      ) : (
+        {isError && !stats ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-8 text-center">
+            <p className="text-sm text-slate-600">Não foi possível carregar o painel.</p>
+            <Button variant="navy" onClick={() => refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        ) : isPending ? (
+          <KpiCardsSkeleton />
+        ) : (
+          <div className={`grid gap-3 transition-opacity lg:grid-cols-[1fr_16rem] ${isFetching ? "opacity-70" : ""}`}>
+            <KpiCards stats={stats} />
+            <PaidGauge stats={stats} />
+          </div>
+        )}
+      </section>
+
+      {stats && (
         <div className={`space-y-6 transition-opacity ${isFetching ? "opacity-70" : ""}`}>
           {stats.overdue.count > 0 && (
             <Alert>
@@ -95,14 +74,19 @@ export function DashboardPage() {
             </Alert>
           )}
 
-          <KpiCards stats={stats} />
-
-          <div className="grid gap-6 xl:grid-cols-3">
-            <div className="xl:col-span-2">
-              <AgendaList items={stats.agenda} />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <MonthlyChart points={stats.yearByMonth} selected={month} onSelect={setMonth} />
             </div>
+            <StatusDonut stats={stats} />
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <SupplierBars stats={stats} />
             <DistributionChart stats={stats} />
           </div>
+
+          <AgendaList items={stats.agenda} />
         </div>
       )}
     </div>

@@ -97,10 +97,22 @@ export type AgendaItemDTO = {
 
 type Totals = { totalCents: number; paidCents: number; pendingCents: number };
 
+/** Vencimentos de um mês, separados em impostos e boletos (boletos: valor + juros/multa). */
+export type MonthSeriesPointDTO = { month: string; taxesCents: number; boletosCents: number };
+
+/** Quanto vence no mês para um fornecedor, somando boletos e impostos ligados a ele. */
+export type SupplierSpendDTO = { id: string; name: string; totalCents: number; count: number };
+
 export type DashboardStatsDTO = {
   month: string; // AAAA-MM de referência dos KPIs mensais
   /** Tudo que vence no mês; `pendingCents` é o "Total a pagar no mês". */
   monthTotals: Totals;
+  /** Parte do pendente do mês que já venceu. */
+  monthOverdue: { count: number; totalCents: number };
+  /** Os 12 meses do ano do mês de referência, de janeiro a dezembro. */
+  yearByMonth: MonthSeriesPointDTO[];
+  /** Fornecedores com mais valor vencendo no mês (até 6), do maior para o menor. */
+  topSuppliers: SupplierSpendDTO[];
   /** Impostos com vencimento no ano do mês de referência. */
   taxesYearToDate: Totals & { year: number };
   pendingBoletos: { count: number; totalCents: number; overdueCount: number };

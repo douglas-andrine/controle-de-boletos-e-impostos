@@ -5,6 +5,7 @@ import { useTogglePaid } from "../../lib/dashboard";
 import { StatusBadge } from "../../components/StatusBadge";
 import { CopyButton } from "../../components/CopyButton";
 import { useToast } from "../../components/ui/Toast";
+import { DashboardCard } from "./DashboardCard";
 
 function AgendaRow({ item }: { item: AgendaItemDTO }) {
   const togglePaid = useTogglePaid();
@@ -72,11 +73,7 @@ function AgendaRow({ item }: { item: AgendaItemDTO }) {
 
 export function AgendaList({ items }: { items: AgendaItemDTO[] }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5">
-      <header>
-        <h2 className="font-semibold text-navy">Atrasados e próximos vencimentos</h2>
-        <p className="text-xs text-slate-500">Pendências vencidas e o que vence nos próximos 15 dias</p>
-      </header>
+    <DashboardCard title="Atrasados e próximos vencimentos" subtitle="Pendências vencidas e o que vence nos próximos 15 dias">
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-slate-500">
@@ -84,12 +81,12 @@ export function AgendaList({ items }: { items: AgendaItemDTO[] }) {
           Tudo em dia! Nada vencido ou vencendo nos próximos 15 dias.
         </div>
       ) : (
-        <ul className="mt-2 divide-y divide-slate-100">
+        <ul className="-mt-3 -mb-4 divide-y divide-slate-100">
           {items.map((item) => (
             <AgendaRow key={`${item.type}-${item.id}`} item={item} />
           ))}
         </ul>
       )}
-    </section>
+    </DashboardCard>
   );
 }
