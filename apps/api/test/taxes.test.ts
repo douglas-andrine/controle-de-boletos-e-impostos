@@ -271,4 +271,32 @@ describe("Impostos: nota fiscal, empresa e entrega da mercadoria", () => {
     const res = await app.inject({ method: "DELETE", url: `/suppliers/${supplier.id}`, cookies });
     expect(res.statusCode).toBe(409);
   });
+
+  it("não cadastra imposto com número de nota fiscal repetido", async () => {
+    await createTax({ invoiceNumber: "123456" });
+    const res = await createTax({ name: "ICMS", invoiceNumber: " 123456 " });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().message).toBe("Já existe um imposto com esta nota fiscal");
+    expect((await list("")).meta.total).toBe(1);
+  });
+
+  it("não edita imposto para uma nota fiscal já usada, mas mantém a própria", async () => {
+    await createTax({ invoiceNumber: "111" });
+    const { id } = (await createTax({ invoiceNumber: "222" })).json();
+
+    const dup = await app.inject({ method: "PUT", url: `/taxes/${id}`, cookies, payload: { ...baseTax, invoiceNumber: "111" } });
+    expect(dup.statusCode).toBe(409);
+    const same = await app.inject({ method: "PUT", url: `/taxes/${id}`, cookies, payload: { ...baseTax, invoiceNumber: "222", name: "DAS" } });
+    expect(same.statusCode).toBe(200);
+  });
+
+  it("permite vários impostos sem nota e a mesma nota em usuários diferentes", async () => {
+    expect((await createTax()).statusCode).toBe(201);
+    expect((await createTax()).statusCode).toBe(201);
+    expect((await createTax({ invoiceNumber: "777" })).statusCode).toBe(201);
+
+    const other = await createSession(app, "outro@exemplo.com");
+    const res = await app.inject({ method: "POST", url: "/taxes", cookies: other.cookies, payload: { ...baseTax, invoiceNumber: "777" } });
+    expect(res.statusCode).toBe(201);
+  });
 });

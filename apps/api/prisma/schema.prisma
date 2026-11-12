@@ -87,6 +87,8 @@ model Tax {
   // Restrict: fornecedor com impostos não pode ser excluído (preserva histórico)
   supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: Restrict)
 
+  // Nota fiscal não se repete entre os impostos do usuário; NULL (sem nota) pode repetir
+  @@unique([userId, invoiceNumber])
   @@index([userId, dueDate])
   @@index([userId, referenceMonth])
   @@index([supplierId])
