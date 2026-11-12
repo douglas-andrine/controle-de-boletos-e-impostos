@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { deliveryInputSchema, payInputSchema, taxInputSchema, taxListQuerySchema, todayISO, type TaxInput, type TaxListSummary } from "@tributoleao/shared";
 import { prisma } from "../lib/prisma";
-import { conflict, notFound } from "../lib/errors";
+import { conflict, isUniqueViolation, notFound } from "../lib/errors";
 import { dateFromISO, monthFromISO } from "../lib/dates";
 import { pageArgs, pageMeta } from "../lib/pagination";
 import { assertSupplierOwned, lateDeliveryWhere, payableConditions } from "../lib/payables";
@@ -27,6 +27,8 @@ function toTaxData(input: TaxInput) {
     goodsDelivered: input.goodsDelivered,
   };
 }
+
+const duplicateInvoice = () => conflict("Já existe um imposto com esta nota fiscal");
 
 async function findOwnedTax(userId: string, id: string) {
   const tax = await prisma.tax.findFirst({ where: { id, userId }, include: withSupplier });
@@ -91,8 +93,13 @@ export async function taxRoutes(app: FastifyInstance) {
   app.post("/taxes", async (request, reply) => {
     const input = taxInputSchema.parse(request.body);
     if (input.supplierId) await assertSupplierOwned(request.user.sub, input.supplierId);
-    const tax = await prisma.tax.create({ data: { ...toTaxData(input), userId: request.user.sub }, include: withSupplier });
-    return reply.status(201).send(serializeTax(tax));
+    try {
+      const tax = await prisma.tax.create({ data: { ...toTaxData(input), userId: request.user.sub }, include: withSupplier });
+      return reply.status(201).send(serializeTax(tax));
+    } catch (err) {
+      if (isUniqueViolation(err)) throw duplicateInvoice();
+      throw err;
+    }
   });
 
   app.put("/taxes/:id", async (request) => {
@@ -100,7 +107,12 @@ export async function taxRoutes(app: FastifyInstance) {
     const input = taxInputSchema.parse(request.body);
     await findOwnedTax(request.user.sub, id);
     if (input.supplierId) await assertSupplierOwned(request.user.sub, input.supplierId);
-    return serializeTax(await prisma.tax.update({ where: { id }, data: toTaxData(input), include: withSupplier }));
+    try {
+      return serializeTax(await prisma.tax.update({ where: { id }, data: toTaxData(input), include: withSupplier }));
+    } catch (err) {
+      if (isUniqueViolation(err)) throw duplicateInvoice();
+      throw err;
+    }
   });
 
   app.delete("/taxes/:id", async (request, reply) => {
