@@ -70,3 +70,29 @@
 body {
   @apply bg-surface text-slate-800 antialiased;
 }
+
+/* Impressão (Relatórios): folha branca com texto preto, mesmo no modo escuro.
+   Só a .print-sheet sai no papel; o resto da tela usa print:hidden. */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .print-sheet {
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .print-sheet,
+  .print-sheet * {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #bbb !important;
+  }
+}

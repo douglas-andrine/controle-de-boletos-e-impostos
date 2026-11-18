@@ -40,6 +40,7 @@ packages/
 | **Impostos** | Filtros por status e período de apuração, valor em R$, baixa com data de pagamento, estorno |
 | **Boletos** | Filtros por status, fornecedor e mês de vencimento; valor + juros/multa com total ao vivo; baixa e estorno |
 | **Fornecedores** | Busca por nome ou CPF/CNPJ, máscaras, histórico de boletos por fornecedor, exclusão protegida |
+| **Relatórios** | Boletos ou impostos que vencem num dia ou num mês, com filtro de status, totais (pago, a pagar, atrasado) e impressão em A4 |
 
 Filtros e paginação ficam na URL (links compartilháveis) e todas as telas funcionam no celular.
 
@@ -71,12 +72,14 @@ Todas as rotas exigem sessão e só enxergam os dados do usuário logado: o recu
 | Fornecedores | `GET/POST /suppliers` · `GET/PUT/DELETE /suppliers/:id` |
 | Impostos | `GET/POST /taxes` · `GET/PUT/DELETE /taxes/:id` · `PATCH /taxes/:id/pay` · `PATCH /taxes/:id/unpay` |
 | Boletos | `GET/POST /boletos` · `GET/PUT/DELETE /boletos/:id` · `PATCH /boletos/:id/pay` · `PATCH /boletos/:id/unpay` |
+| Relatórios | `GET /reports/boletos` · `GET /reports/taxes` |
 
 - **Listagens paginadas**: `?page=1&pageSize=20`, com resposta `{ data, meta: { page, pageSize, total, totalPages } }`.
 - **Filtros**:
   - `search` em todas as listagens; em fornecedores, aceita nome ou CPF/CNPJ com ou sem máscara.
   - Impostos e boletos: `status` (`PENDENTE`, `PAGO`, `ATRASADO`), `dueFrom` e `dueTo` (intervalo de vencimento).
   - Impostos: `referenceMonth=AAAA-MM`. Boletos: `supplierId`.
+- **Relatórios**: `?day=AAAA-MM-DD` (diário) ou `?month=AAAA-MM` (mensal), um dos dois, e `status` opcional. Sem paginação: devolvem `{ from, to, items, totals }` com todos os vencimentos do período.
 - **Baixa de pagamento**: `PATCH /:id/pay` aceita `{ "paidAt": "AAAA-MM-DD" }` opcional (padrão: hoje). `unpay` estorna baixas feitas por engano.
 - **Fornecedor com boletos não pode ser excluído** (`409`), para preservar o histórico financeiro.
 
