@@ -1,11 +1,13 @@
 import { Loader2, Printer } from "lucide-react";
-import { EFFECTIVE_STATUSES, formatBRL, supplierName, todayISO, type BoletoDTO, type ReportTotalsDTO, type TaxDTO } from "@tributoleao/shared";
+import { APP_TIME_ZONE, EFFECTIVE_STATUSES, formatBRL, supplierName, todayISO, type BoletoDTO, type ReportTotalsDTO, type TaxDTO } from "@tributoleao/shared";
+import { useCurrentUser } from "../../lib/auth";
 import { formatDate, formatMonth, formatMonthShort } from "../../lib/format";
 import { useListFilters } from "../../lib/useListFilters";
 import { useReport, type ReportKind, type ReportPeriod } from "../../lib/reports";
 import { Button } from "../../components/ui/Button";
 import { StatusBadge } from "../../components/StatusBadge";
 import { StatusTabs } from "../../components/payables";
+import { Logo } from "../../components/Logo";
 
 const KINDS: Array<{ value: ReportKind; label: string }> = [
   { value: "boletos", label: "Boletos" },
@@ -42,15 +44,20 @@ function Segmented<T extends string>({ label, options, value, onChange }: { labe
   );
 }
 
-const th = "px-3 py-2 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-slate-500 uppercase";
+// Na impressão a tabela fica mais compacta para caber mais linhas por folha
+const th = "px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap text-heading uppercase print:py-1.5";
 const thRight = `${th} text-right`;
-const td = "px-3 py-2 align-top";
+const td = "px-3 py-2 align-top print:py-1";
 const money = `${td} text-right whitespace-nowrap tabular-nums`;
+const table = "w-full text-sm print:text-[11px]";
+const thead = "bg-slate-100";
+const row = "break-inside-avoid even:bg-slate-50";
+const tfoot = "border-t-2 border-heading bg-slate-100 font-semibold text-heading";
 
 function BoletoTable({ items, totals }: { items: BoletoDTO[]; totals: ReportTotalsDTO }) {
   return (
-    <table className="w-full text-sm">
-      <thead className="border-b border-slate-200">
+    <table className={table}>
+      <thead className={thead}>
         <tr>
           <th className={th}>Vencimento</th>
           <th className={th}>Fornecedor</th>
@@ -62,9 +69,9 @@ function BoletoTable({ items, totals }: { items: BoletoDTO[]; totals: ReportTota
           <th className={th}>Pago em</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody>
         {items.map((b) => (
-          <tr key={b.id} className="break-inside-avoid">
+          <tr key={b.id} className={row}>
             <td className={`${td} tabular-nums`}>{formatDate(b.dueDate)}</td>
             <td className={td}>{supplierName(b.supplier)}</td>
             <td className={`${td} tabular-nums`}>{b.invoiceNumber ?? "—"}</td>
@@ -78,7 +85,7 @@ function BoletoTable({ items, totals }: { items: BoletoDTO[]; totals: ReportTota
           </tr>
         ))}
       </tbody>
-      <tfoot className="border-t-2 border-slate-300 font-semibold">
+      <tfoot className={tfoot}>
         <tr>
           <td className={td} colSpan={5}>
             Total ({totals.count} {totals.count === 1 ? "boleto" : "boletos"})
@@ -93,8 +100,8 @@ function BoletoTable({ items, totals }: { items: BoletoDTO[]; totals: ReportTota
 
 function TaxTable({ items, totals }: { items: TaxDTO[]; totals: ReportTotalsDTO }) {
   return (
-    <table className="w-full text-sm">
-      <thead className="border-b border-slate-200">
+    <table className={table}>
+      <thead className={thead}>
         <tr>
           <th className={th}>Vencimento</th>
           <th className={th}>Imposto</th>
@@ -106,9 +113,9 @@ function TaxTable({ items, totals }: { items: TaxDTO[]; totals: ReportTotalsDTO 
           <th className={th}>Pago em</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-slate-100">
+      <tbody>
         {items.map((t) => (
-          <tr key={t.id} className="break-inside-avoid">
+          <tr key={t.id} className={row}>
             <td className={`${td} tabular-nums`}>{formatDate(t.dueDate)}</td>
             <td className={td}>
               {t.name}
@@ -125,7 +132,7 @@ function TaxTable({ items, totals }: { items: TaxDTO[]; totals: ReportTotalsDTO 
           </tr>
         ))}
       </tbody>
-      <tfoot className="border-t-2 border-slate-300 font-semibold">
+      <tfoot className={tfoot}>
         <tr>
           <td className={td} colSpan={5}>
             Total ({totals.count} {totals.count === 1 ? "imposto" : "impostos"})
@@ -138,24 +145,27 @@ function TaxTable({ items, totals }: { items: TaxDTO[]; totals: ReportTotalsDTO 
   );
 }
 
-function Summary({ totals }: { totals: ReportTotalsDTO }) {
+function Summary({ totals, itemLabel }: { totals: ReportTotalsDTO; itemLabel: string }) {
   const cells = [
-    { label: "Total", value: totals.totalCents },
-    { label: "Pago", value: totals.paidCents },
-    { label: "A pagar", value: totals.pendingCents },
-    { label: "Atrasado", value: totals.overdueCents },
+    { label: "Total", value: totals.totalCents, accent: "border-l-heading", detail: `${totals.count} ${itemLabel}` },
+    { label: "Pago", value: totals.paidCents, accent: "border-l-emerald-brand" },
+    { label: "A pagar", value: totals.pendingCents, accent: "border-l-gold" },
+    { label: "Atrasado", value: totals.overdueCents, accent: "border-l-danger" },
   ];
   return (
     <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 print:grid-cols-4">
       {cells.map((c) => (
-        <div key={c.label} className="rounded-lg border border-slate-200 px-3 py-2">
-          <dt className="text-xs text-slate-500">{c.label}</dt>
-          <dd className="font-semibold whitespace-nowrap text-heading tabular-nums">{formatBRL(c.value)}</dd>
+        <div key={c.label} className={`rounded-lg border border-l-4 border-slate-200 px-3 py-2 ${c.accent}`}>
+          <dt className="text-[11px] font-medium tracking-wide text-slate-500 uppercase">{c.label}</dt>
+          <dd className="text-lg font-semibold whitespace-nowrap text-heading tabular-nums">{formatBRL(c.value)}</dd>
+          {c.detail && <dd className="text-xs text-slate-500">{c.detail}</dd>}
         </div>
       ))}
     </dl>
   );
 }
+
+const timeFormatter = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: APP_TIME_ZONE });
 
 export function ReportsPage() {
   // Filtros na URL: ?tipo=impostos&periodo=mensal&data=2026-11&status=PAGO
@@ -170,6 +180,7 @@ export function ReportsPage() {
   const status = EFFECTIVE_STATUSES.find((s) => s === statusParam);
 
   const { data, isPending, isError, isFetching, refetch } = useReport({ kind, period, date, status });
+  const { data: user } = useCurrentUser();
 
   // Trocar o período mantém a data: o dia vira o mês dele; o mês vira o dia 1 (ou hoje, se for o mês atual)
   const changePeriod = (next: ReportPeriod) => {
@@ -226,16 +237,24 @@ export function ReportsPage() {
         <div className="h-64 animate-pulse rounded-xl bg-card shadow-sm" aria-hidden />
       ) : (
         // A folha impressa: o que está fora dela some na impressão (print:hidden)
-        <section className={`print-sheet space-y-4 rounded-xl bg-card p-4 shadow-sm transition-opacity sm:p-6 ${isFetching ? "opacity-70" : ""}`} aria-label={title}>
-          <header className="flex flex-col gap-1 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-heading">{title}</h2>
-              <p className="text-sm text-slate-600">
-                Vencimento em {periodLabel}
-                {status && ` · somente ${STATUS_LABELS[status]}`}
+        <section className={`print-sheet space-y-5 rounded-xl bg-card p-4 shadow-sm transition-opacity sm:p-6 ${isFetching ? "opacity-70" : ""}`} aria-label={title}>
+          <header className="flex flex-col gap-3 border-b-2 border-heading pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <Logo tone="dark" />
+              <div>
+                <h2 className="text-xl font-semibold text-heading">{title}</h2>
+                <p className="text-sm text-slate-600">
+                  Vencimento em {periodLabel}
+                  {status && ` · somente ${STATUS_LABELS[status]}`}
+                </p>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 sm:text-right">
+              {user && <p className="font-medium text-slate-700">{user.name}</p>}
+              <p>
+                Emitido em {formatDate(today)} às {timeFormatter.format(new Date())}
               </p>
             </div>
-            <p className="text-xs text-slate-500">TributoLeão · emitido em {formatDate(today)}</p>
           </header>
 
           {empty ? (
@@ -245,8 +264,8 @@ export function ReportsPage() {
             </p>
           ) : (
             <>
-              <Summary totals={data.totals} />
-              <div className="overflow-x-auto print:overflow-visible">
+              <Summary totals={data.totals} itemLabel={kind === "boletos" ? (data.totals.count === 1 ? "boleto" : "boletos") : data.totals.count === 1 ? "imposto" : "impostos"} />
+              <div className="overflow-x-auto rounded-lg border border-slate-200 print:overflow-visible">
                 {kind === "boletos" ? (
                   <BoletoTable items={data.items as BoletoDTO[]} totals={data.totals} />
                 ) : (
