@@ -9,6 +9,7 @@ import { SuppliersPage } from "./pages/suppliers/SuppliersPage";
 import { TaxesPage } from "./pages/taxes/TaxesPage";
 import { BoletosPage } from "./pages/boletos/BoletosPage";
 import { UsersPage } from "./pages/users/UsersPage";
+import { ReportsPage } from "./pages/reports/ReportsPage";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
           { path: "/impostos", element: <TaxesPage /> },
           { path: "/boletos", element: <BoletosPage /> },
           { path: "/fornecedores", element: <SuppliersPage /> },
+          { path: "/relatorios", element: <ReportsPage /> },
           { element: <RequireAdmin />, children: [{ path: "/usuarios", element: <UsersPage /> }] },
         ],
       },

@@ -125,3 +125,11 @@ export type DashboardStatsDTO = {
   /** Distribuição do mês: impostos vs. boletos operacionais. */
   distribution: { taxesCents: number; boletosCents: number; taxesPercent: number; boletosPercent: number };
 };
+
+/** Totais do relatório; boletos somam valor + juros/multa. `overdueCents` é parte de `pendingCents`. */
+export type ReportTotalsDTO = { count: number; totalCents: number; paidCents: number; pendingCents: number; overdueCents: number };
+
+/** Vencimentos de um dia ou de um mês (`from` = `to` no relatório diário). */
+export type ReportDTO<T> = { from: string; to: string; items: T[]; totals: ReportTotalsDTO };
+export type BoletoReportDTO = ReportDTO<BoletoDTO>;
+export type TaxReportDTO = ReportDTO<TaxDTO>;

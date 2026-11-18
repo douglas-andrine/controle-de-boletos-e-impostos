@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { Building2, KeyRound, Landmark, LayoutDashboard, LogOut, Menu, Receipt, Users, X } from "lucide-react";
+import { Building2, FileText, KeyRound, Landmark, LayoutDashboard, LogOut, Menu, Receipt, Users, X } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { PasswordDialog } from "../components/PasswordDialog";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/impostos", label: "Impostos", Icon: Landmark },
   { to: "/boletos", label: "Boletos", Icon: Receipt },
   { to: "/fornecedores", label: "Fornecedores", Icon: Building2 },
+  { to: "/relatorios", label: "Relatórios", Icon: FileText },
 ];
 
 const adminNavItems = [{ to: "/usuarios", label: "Usuários", Icon: Users, end: false }];
@@ -86,12 +87,12 @@ export function AppLayout() {
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
   return (
-    <div className="min-h-screen lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 lg:block">
+    <div className="min-h-screen lg:pl-64 print:pl-0">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 lg:block print:hidden">
         <Sidebar />
       </aside>
 
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-navy px-4 py-3 lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-navy px-4 py-3 lg:hidden print:hidden">
         <Logo />
         <button
           type="button"
@@ -120,7 +121,7 @@ export function AppLayout() {
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl p-4 sm:p-8">
+      <main className="mx-auto max-w-6xl p-4 sm:p-8 print:max-w-none print:p-0">
         <Outlet />
       </main>
     </div>

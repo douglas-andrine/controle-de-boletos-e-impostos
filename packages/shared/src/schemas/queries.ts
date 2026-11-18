@@ -58,3 +58,13 @@ export type BoletoListQuery = z.infer<typeof boletoListQuerySchema>;
 export const dashboardQuerySchema = z.object({
   month: monthSchema.optional(), // padrão: mês atual
 });
+
+// Relatório para impressão: um dia ou um mês inteiro de vencimentos, sem paginação
+export const reportQuerySchema = z
+  .object({
+    day: isoDateSchema.optional(),
+    month: monthSchema.optional(),
+    status: z.enum(EFFECTIVE_STATUSES).optional(),
+  })
+  .refine((q) => Boolean(q.day) !== Boolean(q.month), { message: "Informe o dia ou o mês do relatório" });
+export type ReportQuery = z.infer<typeof reportQuerySchema>;

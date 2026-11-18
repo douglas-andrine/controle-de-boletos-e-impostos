@@ -12,6 +12,7 @@ import { taxRoutes } from "./routes/taxes";
 import { boletoRoutes } from "./routes/boletos";
 import { dashboardRoutes } from "./routes/dashboard";
 import { userRoutes } from "./routes/users";
+import { reportRoutes } from "./routes/reports";
 
 export async function buildApp() {
   const app = Fastify({
@@ -49,6 +50,7 @@ export async function buildApp() {
   await app.register(taxRoutes);
   await app.register(boletoRoutes);
   await app.register(dashboardRoutes);
+  await app.register(reportRoutes);
   await app.register(userRoutes);
 
   return app;
