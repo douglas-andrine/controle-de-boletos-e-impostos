@@ -21,7 +21,7 @@ function FlowCard({ label, Icon, value, detail, accent }: FlowCardProps) {
 
 function FlowArrow() {
   return (
-    <span className="hidden shrink-0 items-center text-white/60 md:flex" aria-hidden>
+    <span className="hidden shrink-0 items-center text-white/60 @2xl:flex" aria-hidden>
       <ArrowRight className="size-5" />
     </span>
   );
@@ -45,49 +45,52 @@ export function KpiCards({ stats }: { stats: DashboardStatsDTO }) {
   const { month, monthTotals, monthOverdue, taxesYearToDate, pendingBoletos, nextDue } = stats;
 
   return (
-    // Os indicadores menores só ficam ao lado do fluxo em telas bem largas; antes disso, numa linha abaixo
-    <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_15rem]">
-      <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-stretch">
-        <FlowCard
-          label={`Total de ${formatMonthName(month)}`}
-          Icon={CalendarRange}
-          value={formatBRL(monthTotals.totalCents)}
-          detail="impostos e boletos que vencem no mês"
-        />
-        <FlowArrow />
-        <FlowCard
-          label="Pago"
-          Icon={CircleCheckBig}
-          accent
-          value={formatBRL(monthTotals.paidCents)}
-          detail={
-            monthTotals.totalCents > 0
-              ? `${formatPercent(Math.round((monthTotals.paidCents / monthTotals.totalCents) * 1000) / 10)} do total do mês`
-              : "nada vence neste mês"
-          }
-        />
-        <FlowArrow />
-        <FlowCard
-          label="A pagar"
-          Icon={Wallet}
-          value={formatBRL(monthTotals.pendingCents)}
-          detail={
-            monthOverdue.count > 0 ? (
-              <span className="font-medium text-danger">
-                {formatBRL(monthOverdue.totalCents)} já vencido ({monthOverdue.count})
-              </span>
-            ) : nextDue ? (
-              <>
-                próximo: <span className="font-medium text-slate-700">{nextDue.title}</span>, {formatDueDistance(nextDue.daysUntilDue)}
-              </>
-            ) : (
-              "nenhum pagamento pendente"
-            )
-          }
-        />
+    // Os indicadores menores ficam numa linha abaixo do fluxo, que assim usa toda a largura
+    <div className="grid gap-3">
+      {/* Lado a lado só quando o espaço do fluxo comporta o valor; o medidor e a barra lateral tiram largura antes do breakpoint da tela */}
+      <div className="@container min-w-0">
+        <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-stretch">
+          <FlowCard
+            label={`Total de ${formatMonthName(month)}`}
+            Icon={CalendarRange}
+            value={formatBRL(monthTotals.totalCents)}
+            detail="impostos e boletos que vencem no mês"
+          />
+          <FlowArrow />
+          <FlowCard
+            label="Pago"
+            Icon={CircleCheckBig}
+            accent
+            value={formatBRL(monthTotals.paidCents)}
+            detail={
+              monthTotals.totalCents > 0
+                ? `${formatPercent(Math.round((monthTotals.paidCents / monthTotals.totalCents) * 1000) / 10)} do total do mês`
+                : "nada vence neste mês"
+            }
+          />
+          <FlowArrow />
+          <FlowCard
+            label="A pagar"
+            Icon={Wallet}
+            value={formatBRL(monthTotals.pendingCents)}
+            detail={
+              monthOverdue.count > 0 ? (
+                <span className="font-medium text-danger">
+                  {formatBRL(monthOverdue.totalCents)} já vencido ({monthOverdue.count})
+                </span>
+              ) : nextDue ? (
+                <>
+                  próximo: <span className="font-medium text-slate-700">{nextDue.title}</span>, {formatDueDistance(nextDue.daysUntilDue)}
+                </>
+              ) : (
+                "nenhum pagamento pendente"
+              )
+            }
+          />
+        </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
+      <div className="grid gap-3 sm:grid-cols-2">
         <MiniStat
           label="Boletos pendentes"
           Icon={Receipt}
