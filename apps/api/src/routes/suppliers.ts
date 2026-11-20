@@ -8,7 +8,6 @@ import { pageArgs, pageMeta } from "../lib/pagination";
 import { serializeSupplier } from "../lib/serializers";
 
 const idParams = z.object({ id: z.string().min(1) });
-const withBoletoCount = { _count: { select: { boletos: true, taxes: true } } } as const;
 
 // Nome fantasia e categoria são o cadastro: ausente vira null. Razão social, CPF/CNPJ e
 // contato não estão mais no formulário, então só mudam quando vêm no corpo (preserva o antigo).
@@ -23,10 +22,28 @@ function toSupplierData(input: SupplierInput) {
   };
 }
 
+/**
+ * Soma os boletos e impostos só dos fornecedores informados, pelo índice de supplierId.
+ * Não usa `include: { _count }` porque o Prisma gera um GROUP BY sobre a tabela inteira,
+ * de todos os usuários, antes do JOIN: a listagem ficava mais lenta conforme a base crescia.
+ */
+async function withCounts<T extends { id: string }>(suppliers: T[]) {
+  if (suppliers.length === 0) return [];
+  const where = { supplierId: { in: suppliers.map((s) => s.id) } };
+  const [boletos, taxes] = await Promise.all([
+    prisma.boleto.groupBy({ by: ["supplierId"], where, _count: { _all: true } }),
+    prisma.tax.groupBy({ by: ["supplierId"], where, _count: { _all: true } }),
+  ]);
+  const boletoCount = new Map(boletos.map((r) => [r.supplierId, r._count._all]));
+  const taxCount = new Map(taxes.map((r) => [r.supplierId, r._count._all]));
+  return suppliers.map((s) => ({ ...s, _count: { boletos: boletoCount.get(s.id) ?? 0, taxes: taxCount.get(s.id) ?? 0 } }));
+}
+
 async function findOwnedSupplier(userId: string, id: string) {
-  const supplier = await prisma.supplier.findFirst({ where: { id, userId }, include: withBoletoCount });
+  const supplier = await prisma.supplier.findFirst({ where: { id, userId } });
   if (!supplier) throw notFound("Fornecedor");
-  return supplier;
+  const [counted] = await withCounts([supplier]);
+  return counted!;
 }
 
 const duplicateDocument = () => conflict("Já existe um fornecedor com este CPF/CNPJ");
@@ -48,11 +65,11 @@ export async function supplierRoutes(app: FastifyInstance) {
     }
 
     const [suppliers, total] = await prisma.$transaction([
-      prisma.supplier.findMany({ where, include: withBoletoCount, orderBy: [{ tradeName: "asc" }, { legalName: "asc" }], ...pageArgs(page, pageSize) }),
+      prisma.supplier.findMany({ where, orderBy: [{ tradeName: "asc" }, { legalName: "asc" }], ...pageArgs(page, pageSize) }),
       prisma.supplier.count({ where }),
     ]);
 
-    return { data: suppliers.map(serializeSupplier), meta: pageMeta(page, pageSize, total) };
+    return { data: (await withCounts(suppliers)).map(serializeSupplier), meta: pageMeta(page, pageSize, total) };
   });
 
   // Todos os fornecedores, só com id e nomes, para os selects de filtro e formulário:
@@ -73,10 +90,8 @@ export async function supplierRoutes(app: FastifyInstance) {
   app.post("/suppliers", async (request, reply) => {
     const input = supplierInputSchema.parse(request.body);
     try {
-      const supplier = await prisma.supplier.create({
-        data: { ...toSupplierData(input), userId: request.user.sub },
-        include: withBoletoCount,
-      });
+      // Recém-criado: não tem boletos nem impostos, a contagem sai 0
+      const supplier = await prisma.supplier.create({ data: { ...toSupplierData(input), userId: request.user.sub } });
       return reply.status(201).send(serializeSupplier(supplier));
     } catch (err) {
       if (isUniqueViolation(err)) throw duplicateDocument();
@@ -89,8 +104,9 @@ export async function supplierRoutes(app: FastifyInstance) {
     const input = supplierInputSchema.parse(request.body);
     await findOwnedSupplier(request.user.sub, id);
     try {
-      const supplier = await prisma.supplier.update({ where: { id }, data: toSupplierData(input), include: withBoletoCount });
-      return serializeSupplier(supplier);
+      const supplier = await prisma.supplier.update({ where: { id }, data: toSupplierData(input) });
+      const [counted] = await withCounts([supplier]);
+      return serializeSupplier(counted!);
     } catch (err) {
       if (isUniqueViolation(err)) throw duplicateDocument();
       throw err;
