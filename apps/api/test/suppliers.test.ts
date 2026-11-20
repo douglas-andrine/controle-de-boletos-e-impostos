@@ -170,4 +170,43 @@ describe("Fornecedores", () => {
     const ok = await app.inject({ method: "DELETE", url: `/suppliers/${free.id}`, cookies });
     expect(ok.statusCode).toBe(204);
   });
+
+  it("bloqueia exclusão de fornecedor com impostos", async () => {
+    const { id } = (await createSupplier()).json();
+    const { userId } = await prisma.supplier.findUniqueOrThrow({ where: { id }, select: { userId: true } });
+    await prisma.tax.create({
+      data: { userId, supplierId: id, name: "ICMS", amountCents: 500, dueDate: new Date(isoDay(5)), referenceMonth: new Date("2026-01-01") },
+    });
+
+    const res = await app.inject({ method: "DELETE", url: `/suppliers/${id}`, cookies });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().message).toContain("impostos");
+  });
+
+  it("conta os boletos de cada fornecedor da página, sem misturar outros usuários", async () => {
+    const boleto = (c: Record<string, string>, supplierId: string, n: number) =>
+      app.inject({ method: "POST", url: "/boletos", cookies: c, payload: { supplierId, invoiceNumber: `NF${n}`, amountCents: 1000, dueDate: isoDay(n) } });
+
+    const a = (await createSupplier({ tradeName: "A Fornecedor" })).json();
+    const b = (await createSupplier({ tradeName: "B Fornecedor" })).json();
+    await createSupplier({ tradeName: "C Fornecedor" });
+    for (let i = 1; i <= 3; i++) await boleto(cookies, a.id, i);
+    await boleto(cookies, b.id, 4);
+
+    // Outro usuário com boletos no mesmo nome de fornecedor: não pode afetar as contagens deste
+    const other = await createSession(app, "outro@exemplo.com");
+    const otherSupplier = (await app.inject({ method: "POST", url: "/suppliers", cookies: other.cookies, payload: { tradeName: "A Fornecedor" } })).json();
+    for (let i = 1; i <= 5; i++) await boleto(other.cookies, otherSupplier.id, i);
+
+    const page1 = await app.inject({ method: "GET", url: "/suppliers?page=1&pageSize=2", cookies });
+    expect(page1.json().data.map((s: { tradeName: string; boletoCount: number }) => [s.tradeName, s.boletoCount])).toEqual([
+      ["A Fornecedor", 3],
+      ["B Fornecedor", 1],
+    ]);
+    const page2 = await app.inject({ method: "GET", url: "/suppliers?page=2&pageSize=2", cookies });
+    expect(page2.json().data.map((s: { boletoCount: number }) => s.boletoCount)).toEqual([0]);
+
+    const otherList = await app.inject({ method: "GET", url: "/suppliers", cookies: other.cookies });
+    expect(otherList.json().data[0].boletoCount).toBe(5);
+  });
 });
