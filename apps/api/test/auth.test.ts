@@ -103,6 +103,27 @@ describe("POST /auth/login", () => {
     expect(wrongPassword.json().message).toBe(unknownEmail.json().message);
     expect(sessionCookie(wrongPassword)).toBeUndefined();
   });
+
+  it("limita as tentativas por email mesmo vindo de IPs diferentes", async () => {
+    // Email só deste teste: o contador do limite vive na instância do app, entre os testes
+    const target = { name: "Alvo", email: "alvo@exemplo.com", password: "senhaDoAlvo123" };
+    await app.inject({ method: "POST", url: "/auth/register", remoteAddress: "10.8.0.1", payload: target });
+    const attempt = (n: number, email: string, password: string) =>
+      app.inject({ method: "POST", url: "/auth/login", remoteAddress: `10.7.${Math.floor(n / 250)}.${(n % 250) + 1}`, payload: { email, password } });
+
+    const statuses = [];
+    for (let i = 0; i < 10; i++) statuses.push((await attempt(i, target.email, `errada${i}`)).statusCode);
+    expect(statuses.every((s) => s === 401)).toBe(true);
+
+    // 11ª tentativa, de um IP novo e com a senha certa: bloqueada até a janela passar
+    const blocked = await attempt(100, "  ALVO@exemplo.com ", target.password);
+    expect(blocked.statusCode).toBe(429);
+    expect(sessionCookie(blocked)).toBeUndefined();
+
+    // Outras contas não são afetadas
+    const otherAccount = await attempt(101, validUser.email, validUser.password);
+    expect(otherAccount.statusCode).toBe(200);
+  });
 });
 
 describe("GET /auth/me e POST /auth/logout", () => {

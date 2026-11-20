@@ -26,15 +26,17 @@ enum AuthProvider {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  name         String
-  email        String       @unique
-  passwordHash String? // null para quem entrou só via Google
-  googleId     String?      @unique
-  provider     AuthProvider @default(LOCAL)
-  role         UserRole     @default(USER)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  name           String
+  email          String       @unique
+  passwordHash   String? // null para quem entrou só via Google
+  googleId       String?      @unique
+  provider       AuthProvider @default(LOCAL)
+  role           UserRole     @default(USER)
+  // Vai no token da sessão; incrementar invalida todas as sessões abertas do usuário
+  sessionVersion Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   suppliers Supplier[]
   taxes     Tax[]

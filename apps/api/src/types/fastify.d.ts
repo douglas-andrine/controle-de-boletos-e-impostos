@@ -3,8 +3,9 @@ import type { preHandlerAsyncHookHandler } from "fastify";
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
-    payload: { sub: string };
-    user: { sub: string };
+    // sv = sessionVersion do usuário quando o token foi emitido (ausente em tokens antigos)
+    payload: { sub: string; sv?: number };
+    user: { sub: string; sv?: number };
   }
 }
 
