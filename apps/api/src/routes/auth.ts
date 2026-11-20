@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma";
 import { endSession, startSession } from "../lib/session";
 import { DEMO_EMAIL, ensureDemoUser } from "../lib/demo";
 import { HttpError } from "../lib/errors";
+import { clearLoginAttempts, consumeLoginAttempt } from "../lib/login-throttle";
 import { fetchGoogleProfile, googleAuthUrl, isGoogleConfigured, type GoogleProfile } from "../lib/google";
 
 export const BCRYPT_ROUNDS = 10;
@@ -46,7 +47,13 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
 
   const byEmail = await prisma.user.findUnique({ where: { email: profile.email } });
   if (byEmail) {
-    return prisma.user.update({ where: { id: byEmail.id }, data: { googleId: profile.sub } });
+    // O cadastro por senha não confirma o email, então quem criou essa conta pode não ser
+    // o dono dele. O Google acabou de confirmar o dono: a senha antiga é descartada e as
+    // sessões abertas caem. Para entrar também por senha, o dono define uma nova.
+    return prisma.user.update({
+      where: { id: byEmail.id },
+      data: { googleId: profile.sub, passwordHash: null, sessionVersion: { increment: 1 } },
+    });
   }
 
   return prisma.user.create({
@@ -69,12 +76,23 @@ export async function authRoutes(app: FastifyInstance) {
       },
     });
 
-    startSession(app, reply, user.id);
+    startSession(app, reply, user);
     return reply.status(201).send({ user: toPublicUser(user) });
   });
 
   app.post("/auth/login", { config: authRateLimit }, async (request, reply) => {
     const { email, password } = loginSchema.parse(request.body);
+
+    // Antes do bcrypt: bloqueia por conta, venha de qual IP vier, e vale para qualquer
+    // email (existente ou não), então não revela quais estão cadastrados
+    const throttle = consumeLoginAttempt(email);
+    if (!throttle.allowed) {
+      const minutes = Math.ceil(throttle.retryAfterSeconds / 60);
+      return reply
+        .header("retry-after", throttle.retryAfterSeconds)
+        .status(429)
+        .send({ message: `Muitas tentativas para este email. Tente de novo em ${minutes} min.` });
+    }
 
     const user = await prisma.user.findUnique({ where: { email } });
     const passwordOk = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
@@ -84,13 +102,14 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.status(401).send({ message: "Email ou senha inválidos" });
     }
 
-    startSession(app, reply, user.id);
+    clearLoginAttempts(email);
+    startSession(app, reply, user);
     return { user: toPublicUser(user) };
   });
 
   app.post("/auth/demo", { config: authRateLimit }, async (_request, reply) => {
     const user = await ensureDemoUser(prisma);
-    startSession(app, reply, user.id);
+    startSession(app, reply, user);
     return { user: toPublicUser(user) };
   });
 
@@ -130,7 +149,7 @@ export async function authRoutes(app: FastifyInstance) {
     }
 
     const user = await findOrCreateGoogleUser(profile);
-    startSession(app, reply, user.id);
+    startSession(app, reply, user);
     return reply.redirect(`${env.WEB_ORIGIN}/`);
   });
 

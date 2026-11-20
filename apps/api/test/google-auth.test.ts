@@ -87,9 +87,34 @@ describe("GET /auth/google/callback", () => {
     const res = await callback();
     expect(sessionCookie(res)?.value).toBeTruthy();
 
+    // A senha antiga é descartada: ninguém confirmou que quem a criou é o dono do email.
+    // Quem quiser entrar também por senha define uma nova em Configurações.
     const user = await prisma.user.findUniqueOrThrow({ where: { id: existing.id } });
-    expect(user).toMatchObject({ googleId: "google-123", provider: "LOCAL", passwordHash: "hash" });
+    expect(user).toMatchObject({ googleId: "google-123", provider: "LOCAL", passwordHash: null });
     expect(await prisma.user.count()).toBe(1);
+  });
+
+  it("quem cadastrou o email antes não acessa a conta depois do vínculo com o Google", async () => {
+    const other = { remoteAddress: "10.9.0.1" };
+    const password = "senhaDeQuemCadastrou1";
+    const reg = await app.inject({ method: "POST", url: "/auth/register", ...other, payload: { name: "Cadastro antigo", email: "maria@gmail.com", password } });
+    const oldSession = { [SESSION_COOKIE]: sessionCookie(reg)!.value };
+
+    mockGoogle();
+    const google = await callback();
+    const owner = { [SESSION_COOKIE]: sessionCookie(google)!.value };
+    vi.unstubAllGlobals();
+    await app.inject({ method: "POST", url: "/suppliers", cookies: owner, payload: { tradeName: "Fornecedor da Maria" } });
+
+    // A sessão aberta no cadastro deixa de valer...
+    const reused = await app.inject({ method: "GET", url: "/suppliers", cookies: oldSession });
+    expect(reused.statusCode).toBe(401);
+    // ...e a senha cadastrada antes não entra mais
+    const login = await app.inject({ method: "POST", url: "/auth/login", ...other, payload: { email: "maria@gmail.com", password } });
+    expect(login.statusCode).toBe(401);
+    // A dona do email continua com acesso normal
+    const mine = await app.inject({ method: "GET", url: "/suppliers", cookies: owner });
+    expect(mine.json().data.map((s: { tradeName: string }) => s.tradeName)).toEqual(["Fornecedor da Maria"]);
   });
 
   it("reconhece a conta pelo googleId mesmo se o email do Google mudou", async () => {
